@@ -2,7 +2,7 @@
 #:main: Uninheritable
 #--
 # Uninheritable
-# Version 1.0.1.0
+# Version 1.0.2
 #
 # Copyright (c) 2003 Austin Ziegler
 #
@@ -58,7 +58,7 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 module Uninheritable
-  UNINHERITABLE_VERSION = "1.0.1.0"
+  UNINHERITABLE_VERSION = "1.0.2"
     # Redefines a class's #inherited definition to prevent subclassing of the
     # class extended by this module.
   def inherited(klass)
