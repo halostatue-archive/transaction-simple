@@ -1,6 +1,10 @@
 $Id$
 
-== Transaction::Simple 1.11
+== Transaction::Simple 1.2.0
+* Added a RubyGem.
+* Added a block form of Transaction::Simple.
+
+== Transaction::Simple 1.1.1
 * Cleaned up some documentation.
 
 == Transaction::Simple 1.1

@@ -3,52 +3,42 @@
 #
 # == Licence
 #
-# Permission is hereby granted, free of charge, to any person obtaining a copy
-# of this software and associated documentation files (the "Software"), to
-# deal in the Software without restriction, including without limitation the
-# rights to use, copy, modify, merge, publish, distribute, sublicense, and/or
-# sell copies of the Software, and to permit persons to whom the Software is
-# furnished to do so, subject to the following conditions:
+# Permission is hereby granted, free of charge, to any person obtaining a
+# copy of this software and associated documentation files (the "Software"),
+# to deal in the Software without restriction, including without limitation
+# the rights to use, copy, modify, merge, publish, distribute, sublicense,
+# and/or sell copies of the Software, and to permit persons to whom the
+# Software is furnished to do so, subject to the following conditions:
 #
 # The above copyright notice and this permission notice shall be included in
 # all copies or substantial portions of the Software.
 #
 # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 # IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+# THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-# FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-# IN THE SOFTWARE.
+# FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+# DEALINGS IN THE SOFTWARE.
 #--
 # Transaction::Simple
 #   Simple object transaction support for Ruby
-#   Version 1.11
+#   Version 1.2.0
 #
-# Copyright (c) 2003 Austin Ziegler
+# Copyright (c) 2003 - 2004 Austin Ziegler
 #
 # $Id$
-#
-# ==========================================================================
-# Revision History ::
-# YYYY.MM.DD  Change ID   Developer
-#             Description
-# --------------------------------------------------------------------------
-# 2003.07.29              Austin Ziegler
-#             Added debugging capabilities and VERSION string.
-# 2003.08.21              Austin Ziegler
-#             Added named transactions.
-#
-# ==========================================================================
 #++
+  # Required for Transaction::Simple::ThreadSafe
 require 'thread'
 
   # The "Transaction" namespace can be used for additional transactional
   # support objects and modules.
 module Transaction
-
     # A standard exception for transactional errors.
   class TransactionError < StandardError; end
+  class TransactionAborted < Exception; end
+  class TransactionCommitted < Exception; end
     # A standard exception for transactional errors involving the acquisition
     # of locks for Transaction::Simple::ThreadSafe.
   class TransactionThreadError < StandardError; end
@@ -60,8 +50,9 @@ module Transaction
     #
     # Transaction::Simple provides a generic way to add active transactional
     # support to objects. The transaction methods added by this module will
-    # work with most objects, excluding those that cannot be <i>Marshal</i>ed
-    # (bindings, procedure objects, IO instances, or singleton objects).
+    # work with most objects, excluding those that cannot be
+    # <i>Marshal</i>ed (bindings, procedure objects, IO instances, or
+    # singleton objects).
     #
     # The transactions supported by Transaction::Simple are not backed
     # transactions; that is, they have nothing to do with any sort of data
@@ -70,21 +61,21 @@ module Transaction
     # before making the changes permanent.
     #
     # Transaction::Simple can handle an "infinite" number of transactional
-    # levels (limited only by memory). If I open two transactions, commit the
-    # first, but abort the second, the object will revert to the original
-    # version.
+    # levels (limited only by memory). If I open two transactions, commit
+    # the first, but abort the second, the object will revert to the
+    # original version.
     # 
     # Transaction::Simple supports "named" transactions, so that multiple
     # levels of transactions can be committed, aborted, or rewound by
     # referring to the appropriate name of the transaction. Names may be any
     # object *except* +nil+.
     #
-    # Copyright::   Copyright © 2003 by Austin Ziegler
-    # Version::     1.1
+    # Copyright::   Copyright © 2003 - 2004 by Austin Ziegler
+    # Version::     1.2
     # Licence::     MIT-Style
     #
-    # Thanks to David Black for help with the initial concept that led to this
-    # library.
+    # Thanks to David Black for help with the initial concept that led to
+    # this library.
     #
     # == Usage
     #   include 'transaction/simple'
@@ -146,13 +137,81 @@ module Transaction
     #   v.commit_transaction(:first)    # => "Hello, HAL."
     #   v.transaction_open?             # => false
     #
+    # == Block Usage
+    #   include 'transaction/simple'
+    #
+    #   v = "Hello, you."               # => "Hello, you."
+    #   Transaction::Simple.start(v) do |tv|
+    #       # v has been extended with Transaction::Simple and an unnamed
+    #       # transaction has been started.
+    #     tv.transaction_open?          # => true
+    #     tv.gsub!(/you/, "world")      # => "Hello, world."
+    #
+    #     tv.rewind_transaction         # => "Hello, you."
+    #     tv.transaction_open?          # => true
+    #
+    #     tv.gsub!(/you/, "HAL")        # => "Hello, HAL."
+    #       # The following breaks out of the transaction block after
+    #       # aborting the transaction.
+    #     tv.abort_transaction          # => "Hello, you."
+    #   end
+    #     # v still has Transaction::Simple applied from here on out.
+    #   v.transaction_open?             # => false
+    #
+    #   Transaction::Simple.start(v) do |tv|
+    #     tv.start_transaction          # => ... (a Marshal string)
+    #
+    #     tv.transaction_open?          # => true
+    #     tv.gsub!(/you/, "HAL")        # => "Hello, HAL."
+    #
+    #       # If #commit_transaction were called without having started a
+    #       # second transaction, then it would break out of the transaction
+    #       # block after committing the transaction.
+    #     tv.commit_transaction         # => "Hello, HAL."
+    #     tv.transaction_open?          # => true
+    #     tv.abort_transaction          # => "Hello, you."
+    #   end
+    #   v.transaction_open?             # => false
+    #
+    # == Named Transaction Usage
+    #   v = "Hello, you."               # => "Hello, you."
+    #   v.extend(Transaction::Simple)   # => "Hello, you."
+    #   
+    #   v.start_transaction(:first)     # => ... (a Marshal string)
+    #   v.transaction_open?             # => true
+    #   v.transaction_open?(:first)     # => true
+    #   v.transaction_open?(:second)    # => false
+    #   v.gsub!(/you/, "world")         # => "Hello, world."
+    #   
+    #   v.start_transaction(:second)    # => ... (a Marshal string)
+    #   v.gsub!(/world/, "HAL")         # => "Hello, HAL."
+    #   v.rewind_transaction(:first)    # => "Hello, you."
+    #   v.transaction_open?             # => true
+    #   v.transaction_open?(:first)     # => true
+    #   v.transaction_open?(:second)    # => false
+    #   
+    #   v.gsub!(/you/, "world")         # => "Hello, world."
+    #   v.start_transaction(:second)    # => ... (a Marshal string)
+    #   v.gsub!(/world/, "HAL")         # => "Hello, HAL."
+    #   v.transaction_name              # => :second
+    #   v.abort_transaction(:first)     # => "Hello, you."
+    #   v.transaction_open?             # => false
+    #   
+    #   v.start_transaction(:first)     # => ... (a Marshal string)
+    #   v.gsub!(/you/, "world")         # => "Hello, world."
+    #   v.start_transaction(:second)    # => ... (a Marshal string)
+    #   v.gsub!(/world/, "HAL")         # => "Hello, HAL."
+    #   
+    #   v.commit_transaction(:first)    # => "Hello, HAL."
+    #   v.transaction_open?             # => false
+    #
     # == Contraindications
     #
-    # While Transaction::Simple is very useful, it has some severe limitations
-    # that must be understood. Transaction::Simple:
+    # While Transaction::Simple is very useful, it has some severe
+    # limitations that must be understood. Transaction::Simple:
     #
-    # * uses Marshal. Thus, any object which cannot be <i>Marshal</i>ed cannot
-    #   use Transaction::Simple.
+    # * uses Marshal. Thus, any object which cannot be <i>Marshal</i>ed
+    #   cannot use Transaction::Simple.
     # * does not manage resources. Resources external to the object and its
     #   instance variables are not managed at all. However, all instance
     #   variables and objects "belonging" to those instance variables are
@@ -163,29 +222,30 @@ module Transaction
     #   up to the user of Transaction::Simple to provide isolation and
     #   atomicity. Transactions should be considered "critical sections" in
     #   multi-threaded applications. If thread safety and atomicity is
-    #   absolutely required, use Transaction::Simple::ThreadSafe, which uses a
-    #   Mutex object to synchronize the accesses on the object during the
+    #   absolutely required, use Transaction::Simple::ThreadSafe, which uses
+    #   a Mutex object to synchronize the accesses on the object during the
     #   transactional operations.
-    # * does not necessarily maintain Object#__id__ values on rewind or abort.
-    #   This may change for future versions that will be Ruby 1.8 or better
-    #   *only*. Certain objects that support #replace will maintain
+    # * does not necessarily maintain Object#__id__ values on rewind or
+    #   abort. This may change for future versions that will be Ruby 1.8 or
+    #   better *only*. Certain objects that support #replace will maintain
     #   Object#__id__.
     # * Can be a memory hog if you use many levels of transactions on many
     #   objects.
     #
   module Simple
-    VERSION = '1.1.1.0';
+    VERSION = '1.2.0'
 
       # Sets the Transaction::Simple debug object. It must respond to #<<.
       # Sets the transaction debug object. Debugging will be performed
-      # automatically if there's a debug object. The generic transaction error
-      # class.
+      # automatically if there's a debug object. The generic transaction
+      # error class.
     def self.debug_io=(io)
       raise TransactionError, "Transaction Error: the transaction debug object must respond to #<<" unless io.respond_to?(:<<)
       @tdi = io
     end
 
-      # Returns the Transaction::Simple debug object. It must respond to #<<.
+      # Returns the Transaction::Simple debug object. It must respond to
+      # #<<.
     def self.debug_io
       @tdi
     end
@@ -223,50 +283,68 @@ module Transaction
 
       if name.nil?
         @__transaction_names__ << nil
-        s = ""
+        ss = ""
       else
         raise TransactionError, "Transaction Error: Named transactions must be unique." if @__transaction_names__.include?(name)
         @__transaction_names__ << name
-        s = "(#{name.inspect})"
+        ss = "(#{name.inspect})"
       end
 
       @__transaction_level__ += 1
 
-      Transaction::Simple.debug_io << "#{'>' * @__transaction_level__} Start Transaction#{s}\n" unless Transaction::Simple.debug_io.nil?
+      Transaction::Simple.debug_io << "#{'>' * @__transaction_level__} Start Transaction#{ss}\n" unless Transaction::Simple.debug_io.nil?
 
       @__transaction_checkpoint__ = Marshal.dump(self)
     end
 
-      # Rewinds the transaction. If +name+ is specified, then the intervening
-      # transactions will be aborted and the named transaction will be
-      # rewound. Otherwise, only the current transaction is rewound.
+      # Rewinds the transaction. If +name+ is specified, then the
+      # intervening transactions will be aborted and the named transaction
+      # will be rewound. Otherwise, only the current transaction is rewound.
     def rewind_transaction(name = nil)
       raise TransactionError, "Transaction Error: Cannot rewind. There is no current transaction." if @__transaction_checkpoint__.nil?
       if name.nil?
         __rewind_this_transaction
-        s = ""
+        ss = ""
       else
         raise TransactionError, "Transaction Error: Cannot rewind to transaction #{name.inspect} because it does not exist." unless @__transaction_names__.include?(name)
-        s = "(#{name})"
+        ss = "(#{name})"
 
         while @__transaction_names__[-1] != name
           @__transaction_checkpoint__ = __rewind_this_transaction
-          Transaction::Simple.debug_io << "#{'|' * @__transaction_level__} Rewind Transaction#{s}\n" unless Transaction::Simple.debug_io.nil?
+          Transaction::Simple.debug_io << "#{'|' * @__transaction_level__} Rewind Transaction#{ss}\n" unless Transaction::Simple.debug_io.nil?
           @__transaction_level__ -= 1
           @__transaction_names__.pop
         end
         __rewind_this_transaction
       end
-      Transaction::Simple.debug_io << "#{'|' * @__transaction_level__} Rewind Transaction#{s}\n" unless Transaction::Simple.debug_io.nil?
+      Transaction::Simple.debug_io << "#{'|' * @__transaction_level__} Rewind Transaction#{ss}\n" unless Transaction::Simple.debug_io.nil?
       self
     end
 
-      # Aborts the transaction. Resets the object state to what it was before
-      # the transaction was started and closes the transaction. If +name+ is
-      # specified, then the intervening transactions and the named transaction
-      # will be aborted. Otherwise, only the current transaction is aborted.
+      # Aborts the transaction. Resets the object state to what it was
+      # before the transaction was started and closes the transaction. If
+      # +name+ is specified, then the intervening transactions and the named
+      # transaction will be aborted. Otherwise, only the current transaction
+      # is aborted.
+      #
+      # If the current or named transaction has been started by a block
+      # (Transaction::Simple.start), then the execution of the block will be
+      # halted with +break+ +self+.
     def abort_transaction(name = nil)
       raise TransactionError, "Transaction Error: Cannot abort. There is no current transaction." if @__transaction_checkpoint__.nil?
+
+        # Check to see if we are trying to abort a transaction that is
+        # outside of the current transaction block. Otherwise, raise
+        # TransactionAborted if they are the same.
+      if @__transaction_block__ and name
+        nix = @__transaction_names__.index(name) + 1
+        raise TransactionError, "Transaction Error: Cannot abort a transaction outside of this execution block." if nix < @__transaction_block__
+
+        raise TransactionAborted if @__transaction_block__ == nix
+      end
+
+      raise TransactionAborted if @__transaction_block__ == @__transaction_level__
+
       if name.nil?
         __abort_transaction(name)
       else
@@ -277,30 +355,43 @@ module Transaction
       self
     end
 
-      # If +name+ is +nil+ (default), the current transaction level is closed
-      # out and the changes are committed.
+      # If +name+ is +nil+ (default), the current transaction level is
+      # closed out and the changes are committed.
       #
       # If +name+ is specified and +name+ is in the list of named
-      # transactions, then all transactions are closed and committed until the
-      # named transaction is reached.
+      # transactions, then all transactions are closed and committed until
+      # the named transaction is reached.
     def commit_transaction(name = nil)
       raise TransactionError, "Transaction Error: Cannot commit. There is no current transaction." if @__transaction_checkpoint__.nil?
 
+        # Check to see if we are trying to commit a transaction that is
+        # outside of the current transaction block. Otherwise, raise
+        # TransactionCommitted if they are the same.
+      if @__transaction_block__ and name
+        nix = @__transaction_names__.index(name) + 1
+        raise TransactionError, "Transaction Error: Cannot commit a transaction outside of this execution block." if nix < @__transaction_block__
+
+        raise TransactionCommitted if @__transaction_block__ == nix
+      end
+
+      raise TransactionCommitted if @__transaction_block__ == @__transaction_level__
+
       if name.nil?
-        s = ""
+        ss = ""
         __commit_transaction
-        Transaction::Simple.debug_io << "#{'<' * @__transaction_level__} Commit Transaction#{s}\n" unless Transaction::Simple.debug_io.nil?
+        Transaction::Simple.debug_io << "#{'<' * @__transaction_level__} Commit Transaction#{ss}\n" unless Transaction::Simple.debug_io.nil?
       else
         raise TransactionError, "Transaction Error: Cannot commit nonexistant transaction #{name.inspect}." unless @__transaction_names__.include?(name)
-        s = "(#{name})"
+        ss = "(#{name})"
 
         while @__transaction_names__[-1] != name
-          Transaction::Simple.debug_io << "#{'<' * @__transaction_level__} Commit Transaction#{s}\n" unless Transaction::Simple.debug_io.nil?
+          Transaction::Simple.debug_io << "#{'<' * @__transaction_level__} Commit Transaction#{ss}\n" unless Transaction::Simple.debug_io.nil?
           __commit_transaction
         end
-        Transaction::Simple.debug_io << "#{'<' * @__transaction_level__} Commit Transaction#{s}\n" unless Transaction::Simple.debug_io.nil?
+        Transaction::Simple.debug_io << "#{'<' * @__transaction_level__} Commit Transaction#{ss}\n" unless Transaction::Simple.debug_io.nil?
         __commit_transaction
       end
+
       self
     end
 
@@ -330,16 +421,81 @@ module Transaction
       end
     end
 
+    class << self
+      def __common_start(name, vars, &block)
+        raise TransactionError, "Transaction Error: Cannot start a transaction with no objects." if vars.empty?
+
+        if block
+          begin
+            vlevel = {}
+
+            vars.each do |vv|
+              vv.extend(Transaction::Simple)
+              vv.start_transaction(name)
+              vlevel[vv.__id__] = vv.instance_variable_get(:@__transaction_level__)
+              vv.instance_variable_set(:@__transaction_block__, vlevel[vv.__id__])
+            end
+
+            yield *vars
+          rescue TransactionAborted
+            vars.each do |vv|
+              if name.nil? and vv.transaction_open?
+                loop do
+                  tlevel = vv.instance_variable_get(:@__transaction_level__) || -1
+                  vv.instance_variable_set(:@__transaction_block__, -1)
+                  break if tlevel < vlevel[vv.__id__]
+                  vv.abort_transaction if vv.transaction_open?
+                end
+              elsif vv.transaction_open?(name)
+                vv.instance_variable_set(:@__transaction_block__, -1)
+                vv.abort_transaction(name)
+              end
+            end
+          rescue TransactionCommitted
+            nil
+          ensure
+            vars.each do |vv|
+              if name.nil? and vv.transaction_open?
+                loop do
+                  tlevel = vv.instance_variable_get(:@__transaction_level__) || -1
+                  break if tlevel < vlevel[vv.__id__]
+                  vv.instance_variable_set(:@__transaction_block__, -1)
+                  vv.commit_transaction if vv.transaction_open?
+                end
+              elsif vv.transaction_open?(name)
+                vv.instance_variable_set(:@__transaction_block__, -1)
+                vv.commit_transaction(name)
+              end
+            end
+          end
+        else
+          vars.each do |vv|
+            vv.extend(Transaction::Simple)
+            vv.start_transaction(name)
+          end
+        end
+      end
+      private :__common_start
+
+      def start_named(name, *vars, &block)
+        __common_start(name, vars, &block)
+      end
+
+      def start(*vars, &block)
+        __common_start(nil, vars, &block)
+      end
+    end
+
     def __abort_transaction(name = nil) #:nodoc:
       @__transaction_checkpoint__ = __rewind_this_transaction
 
       if name.nil?
-        s = ""
+        ss = ""
       else
-        s = "(#{name.inspect})"
+        ss = "(#{name.inspect})"
       end
 
-      Transaction::Simple.debug_io << "#{'<' * @__transaction_level__} Abort Transaction#{s}\n" unless Transaction::Simple.debug_io.nil?
+      Transaction::Simple.debug_io << "#{'<' * @__transaction_level__} Abort Transaction#{ss}\n" unless Transaction::Simple.debug_io.nil?
       @__transaction_level__ -= 1
       @__transaction_names__.pop
       if @__transaction_level__ < 1
@@ -406,7 +562,7 @@ module Transaction
       #
       # Thanks to Mauricio Fernández for help with getting this part working.
     module ThreadSafe
-      VERSION = '1.1.1.0';
+      VERSION = '1.2.0'
 
       include Transaction::Simple
 
@@ -430,274 +586,6 @@ module Transaction
           end
         EOS
       end
-    end
-  end
-end
-
-if $0 == __FILE__
-  require 'test/unit'
-
-  class Test__Transaction_Simple < Test::Unit::TestCase #:nodoc:
-    VALUE = "Now is the time for all good men to come to the aid of their country."
-
-    def setup
-      @value = VALUE.dup
-      @value.extend(Transaction::Simple)
-    end
-
-    def test_extended
-      assert_respond_to(@value, :start_transaction)
-    end
-
-    def test_started
-      assert_equal(false, @value.transaction_open?)
-      assert_nothing_raised { @value.start_transaction }
-      assert_equal(true, @value.transaction_open?)
-    end
-
-    def test_rewind
-      assert_equal(false, @value.transaction_open?)
-      assert_raises(Transaction::TransactionError) { @value.rewind_transaction }
-      assert_nothing_raised { @value.start_transaction }
-      assert_equal(true, @value.transaction_open?)
-      assert_nothing_raised { @value.gsub!(/men/, 'women') }
-      assert_not_equal(VALUE, @value)
-      assert_nothing_raised { @value.rewind_transaction }
-      assert_equal(true, @value.transaction_open?)
-      assert_equal(VALUE, @value)
-    end
-
-    def test_abort
-      assert_equal(false, @value.transaction_open?)
-      assert_raises(Transaction::TransactionError) { @value.abort_transaction }
-      assert_nothing_raised { @value.start_transaction }
-      assert_equal(true, @value.transaction_open?)
-      assert_nothing_raised { @value.gsub!(/men/, 'women') }
-      assert_not_equal(VALUE, @value)
-      assert_nothing_raised { @value.abort_transaction }
-      assert_equal(false, @value.transaction_open?)
-      assert_equal(VALUE, @value)
-    end
-
-    def test_commit
-      assert_equal(false, @value.transaction_open?)
-      assert_raises(Transaction::TransactionError) { @value.commit_transaction }
-      assert_nothing_raised { @value.start_transaction }
-      assert_equal(true, @value.transaction_open?)
-      assert_nothing_raised { @value.gsub!(/men/, 'women') }
-      assert_not_equal(VALUE, @value)
-      assert_equal(true, @value.transaction_open?)
-      assert_nothing_raised { @value.commit_transaction }
-      assert_equal(false, @value.transaction_open?)
-      assert_not_equal(VALUE, @value)
-    end
-
-    def test_multilevel
-      assert_equal(false, @value.transaction_open?)
-      assert_nothing_raised { @value.start_transaction }
-      assert_equal(true, @value.transaction_open?)
-      assert_nothing_raised { @value.gsub!(/men/, 'women') }
-      assert_equal(VALUE.gsub(/men/, 'women'), @value)
-      assert_equal(true, @value.transaction_open?)
-      assert_nothing_raised { @value.start_transaction }
-      assert_nothing_raised { @value.gsub!(/country/, 'nation-state') }
-      assert_nothing_raised { @value.commit_transaction }
-      assert_equal(VALUE.gsub(/men/, 'women').gsub(/country/, 'nation-state'), @value)
-      assert_equal(true, @value.transaction_open?)
-      assert_nothing_raised { @value.abort_transaction }
-      assert_equal(VALUE, @value)
-    end
-
-    def test_multilevel_named
-      assert_equal(false, @value.transaction_open?)
-      assert_raises(Transaction::TransactionError) { @value.transaction_name }
-      assert_nothing_raised { @value.start_transaction(:first) } # 1
-      assert_raises(Transaction::TransactionError) { @value.start_transaction(:first) }
-      assert_equal(true, @value.transaction_open?)
-      assert_equal(true, @value.transaction_open?(:first))
-      assert_equal(:first, @value.transaction_name)
-      assert_nothing_raised { @value.start_transaction } # 2
-      assert_not_equal(:first, @value.transaction_name)
-      assert_equal(nil, @value.transaction_name)
-      assert_raises(Transaction::TransactionError) { @value.abort_transaction(:second) }
-      assert_nothing_raised { @value.abort_transaction(:first) }
-      assert_equal(false, @value.transaction_open?)
-      assert_nothing_raised do
-        @value.start_transaction(:first)
-        @value.gsub!(/men/, 'women')
-        @value.start_transaction(:second)
-        @value.gsub!(/women/, 'people')
-        @value.start_transaction
-        @value.gsub!(/people/, 'sentients')
-      end
-      assert_nothing_raised { @value.abort_transaction(:second) }
-      assert_equal(true, @value.transaction_open?(:first))
-      assert_equal(VALUE.gsub(/men/, 'women'), @value)
-      assert_nothing_raised do
-        @value.start_transaction(:second)
-        @value.gsub!(/women/, 'people')
-        @value.start_transaction
-        @value.gsub!(/people/, 'sentients')
-      end
-      assert_raises(Transaction::TransactionError) { @value.rewind_transaction(:foo) }
-      assert_nothing_raised { @value.rewind_transaction(:second) }
-      assert_equal(VALUE.gsub(/men/, 'women'), @value)
-      assert_nothing_raised do
-        @value.gsub!(/women/, 'people')
-        @value.start_transaction
-        @value.gsub!(/people/, 'sentients')
-      end
-      assert_raises(Transaction::TransactionError) { @value.commit_transaction(:foo) }
-      assert_nothing_raised { @value.commit_transaction(:first) }
-      assert_equal(VALUE.gsub(/men/, 'sentients'), @value)
-      assert_equal(false, @value.transaction_open?)
-    end
-
-    def test_array
-      assert_nothing_raised do
-        @orig = ["first", "second", "third"]
-        @value = ["first", "second", "third"]
-        @value.extend(Transaction::Simple)
-      end
-      assert_equal(@orig, @value)
-      assert_nothing_raised { @value.start_transaction }
-      assert_equal(true, @value.transaction_open?)
-      assert_nothing_raised { @value[1].gsub!(/second/, "fourth") }
-      assert_not_equal(@orig, @value)
-      assert_nothing_raised { @value.abort_transaction }
-      assert_equal(@orig, @value)
-    end
-  end
-
-  class Test__Transaction_Simple_ThreadSafe < Test::Unit::TestCase #:nodoc:
-    VALUE = "Now is the time for all good men to come to the aid of their country."
-
-    def setup
-      @value = VALUE.dup
-      @value.extend(Transaction::Simple::ThreadSafe)
-    end
-
-    def test_extended
-      assert_respond_to(@value, :start_transaction)
-    end
-
-    def test_started
-      assert_equal(false, @value.transaction_open?)
-      assert_nothing_raised { @value.start_transaction }
-      assert_equal(true, @value.transaction_open?)
-    end
-
-    def test_rewind
-      assert_equal(false, @value.transaction_open?)
-      assert_raises(Transaction::TransactionError) { @value.rewind_transaction }
-      assert_nothing_raised { @value.start_transaction }
-      assert_equal(true, @value.transaction_open?)
-      assert_nothing_raised { @value.gsub!(/men/, 'women') }
-      assert_not_equal(VALUE, @value)
-      assert_nothing_raised { @value.rewind_transaction }
-      assert_equal(true, @value.transaction_open?)
-      assert_equal(VALUE, @value)
-    end
-
-    def test_abort
-      assert_equal(false, @value.transaction_open?)
-      assert_raises(Transaction::TransactionError) { @value.abort_transaction }
-      assert_nothing_raised { @value.start_transaction }
-      assert_equal(true, @value.transaction_open?)
-      assert_nothing_raised { @value.gsub!(/men/, 'women') }
-      assert_not_equal(VALUE, @value)
-      assert_nothing_raised { @value.abort_transaction }
-      assert_equal(false, @value.transaction_open?)
-      assert_equal(VALUE, @value)
-    end
-
-    def test_commit
-      assert_equal(false, @value.transaction_open?)
-      assert_raises(Transaction::TransactionError) { @value.commit_transaction }
-      assert_nothing_raised { @value.start_transaction }
-      assert_equal(true, @value.transaction_open?)
-      assert_nothing_raised { @value.gsub!(/men/, 'women') }
-      assert_not_equal(VALUE, @value)
-      assert_equal(true, @value.transaction_open?)
-      assert_nothing_raised { @value.commit_transaction }
-      assert_equal(false, @value.transaction_open?)
-      assert_not_equal(VALUE, @value)
-    end
-
-    def test_multilevel
-      assert_equal(false, @value.transaction_open?)
-      assert_nothing_raised { @value.start_transaction }
-      assert_equal(true, @value.transaction_open?)
-      assert_nothing_raised { @value.gsub!(/men/, 'women') }
-      assert_equal(VALUE.gsub(/men/, 'women'), @value)
-      assert_equal(true, @value.transaction_open?)
-      assert_nothing_raised { @value.start_transaction }
-      assert_nothing_raised { @value.gsub!(/country/, 'nation-state') }
-      assert_nothing_raised { @value.commit_transaction }
-      assert_equal(VALUE.gsub(/men/, 'women').gsub(/country/, 'nation-state'), @value)
-      assert_equal(true, @value.transaction_open?)
-      assert_nothing_raised { @value.abort_transaction }
-      assert_equal(VALUE, @value)
-    end
-
-    def test_multilevel_named
-      assert_equal(false, @value.transaction_open?)
-      assert_raises(Transaction::TransactionError) { @value.transaction_name }
-      assert_nothing_raised { @value.start_transaction(:first) } # 1
-      assert_raises(Transaction::TransactionError) { @value.start_transaction(:first) }
-      assert_equal(true, @value.transaction_open?)
-      assert_equal(true, @value.transaction_open?(:first))
-      assert_equal(:first, @value.transaction_name)
-      assert_nothing_raised { @value.start_transaction } # 2
-      assert_not_equal(:first, @value.transaction_name)
-      assert_equal(nil, @value.transaction_name)
-      assert_raises(Transaction::TransactionError) { @value.abort_transaction(:second) }
-      assert_nothing_raised { @value.abort_transaction(:first) }
-      assert_equal(false, @value.transaction_open?)
-      assert_nothing_raised do
-        @value.start_transaction(:first)
-        @value.gsub!(/men/, 'women')
-        @value.start_transaction(:second)
-        @value.gsub!(/women/, 'people')
-        @value.start_transaction
-        @value.gsub!(/people/, 'sentients')
-      end
-      assert_nothing_raised { @value.abort_transaction(:second) }
-      assert_equal(true, @value.transaction_open?(:first))
-      assert_equal(VALUE.gsub(/men/, 'women'), @value)
-      assert_nothing_raised do
-        @value.start_transaction(:second)
-        @value.gsub!(/women/, 'people')
-        @value.start_transaction
-        @value.gsub!(/people/, 'sentients')
-      end
-      assert_raises(Transaction::TransactionError) { @value.rewind_transaction(:foo) }
-      assert_nothing_raised { @value.rewind_transaction(:second) }
-      assert_equal(VALUE.gsub(/men/, 'women'), @value)
-      assert_nothing_raised do
-        @value.gsub!(/women/, 'people')
-        @value.start_transaction
-        @value.gsub!(/people/, 'sentients')
-      end
-      assert_raises(Transaction::TransactionError) { @value.commit_transaction(:foo) }
-      assert_nothing_raised { @value.commit_transaction(:first) }
-      assert_equal(VALUE.gsub(/men/, 'sentients'), @value)
-      assert_equal(false, @value.transaction_open?)
-    end
-
-    def test_array
-      assert_nothing_raised do
-        @orig = ["first", "second", "third"]
-        @value = ["first", "second", "third"]
-        @value.extend(Transaction::Simple::ThreadSafe)
-      end
-      assert_equal(@orig, @value)
-      assert_nothing_raised { @value.start_transaction }
-      assert_equal(true, @value.transaction_open?)
-      assert_nothing_raised { @value[1].gsub!(/second/, "fourth") }
-      assert_not_equal(@orig, @value)
-      assert_nothing_raised { @value.abort_transaction }
-      assert_equal(@orig, @value)
     end
   end
 end
