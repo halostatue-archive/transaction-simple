@@ -1,15 +1,10 @@
 Gem::Specification.new do |s|
-  s.name = %q{transaction-simple)
-  s.version = %q{1.1.2}
-  s.summary = %q{Simple object transaction support for Ruby}
-  s.platform = Gem::Platform::RUBY
-
-  s.has_rdoc = true
-
-  s.test_suite_file = %w{tests/tests.rb}
-
-  s.autorequire = %q{transaction/simple}
-  s.require_paths = %w{lib}
+  s.name = %q(transaction-simple)
+  s.version = %q(0.0.0) # Overridden in the rakefile
+  s.author = %q{Austin Ziegler}
+  s.email = %q{transaction-simple@halostatue.ca}
+  s.homepage = %q{http://rubyforge.org/projects/trans-simple}
+  s.rubyforge_project = %q(trans-simple)
 
   s.files = Dir.glob("**/*").delete_if do |item|
     item.include?("CVS") or item.include?(".svn") or
@@ -17,9 +12,29 @@ Gem::Specification.new do |s|
     item =~ /gem(?:spec)?$/
   end
 
-  s.author = %q{Austin Ziegler}
-  s.email = %q{transaction-simple@halostatue.ca}
-  s.rubyforge_project = %q(trans-simple)
-  s.homepage = %q{http://rubyforge.org/projects/trans-simple}
-  s.description = File.read("README")
+  s.summary = %q{Simple object transaction support for Ruby.}
+
+  s.required_ruby_version = %(>=1.8.1)
+
+# s.executables =
+# s.bindir =
+
+  s.test_files = %w{tests/tests.rb}
+
+  s.autorequire = %q{transaction/simple}
+  s.require_paths = %w{lib}
+
+  description = []
+  File.open("README") do |file|
+    file.each do |line|
+      line.chomp!
+      break if line.empty?
+      description << "#{line.gsub(/\[\d\]/, '')}"
+    end
+  end
+  s.description = description[2..-1].join(" ")
+
+  s.has_rdoc = true
+  s.rdoc_options = ["--title", "Transaction::Simple -- Simple object transaction support", "--main", "Transaction::Simple", "--line-numbers"]
+  s.extra_rdoc_files = %w(README ChangeLog Install)
 end
