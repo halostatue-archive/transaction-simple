@@ -1,0 +1,110 @@
+Transaction::Simple for Ruby
+  Simple object transaction support for Ruby
+
+Introduction
+------------
+Transaction::Simple provides a generic way to add active transactional support
+to objects. The transaction methods added by this module will work with most
+objects, excluding those that cannot be Marshal-ed (bindings, procedure
+objects, IO instances, or singleton objects).
+
+The transactions supported by Transaction::Simple are not backend transaction;
+that is, they have nothing to do with any sort of data store. They are "live"
+transactions occurring in memory and in the object itself. This is to allow
+"test" changes to be made to an object before making the changes permanent.
+
+Transaction::Simple can handle an "infinite" number of transactional levels
+(limited only by memory). If I open two transactions, commit the first, but
+abort the second, the object will revert to the original version.
+
+Transaction::Simple supports "named" transactions, so that multiple levels of
+transactions can be committed, aborted, or rewound by referring to the
+appropriate name of the transaction. Names may be any object except nil.
+
+Copyright:    Copyright © 2003 by Austin Ziegler
+Version:      1.11
+Licence:      MIT-Style
+
+Thanks to David Black and Mauricio Fernández for their help with this library.
+
+Usage
+-----
+  include 'transaction/simple'
+
+  v = "Hello, you."               # => "Hello, you."
+  v.extend(Transaction::Simple)   # => "Hello, you."
+
+  v.start_transaction             # => ... (a Marshal string)
+  v.transaction_open?             # => true
+  v.gsub!(/you/, "world")         # => "Hello, world."
+
+  v.rewind_transaction            # => "Hello, you."
+  v.transaction_open?             # => true
+
+  v.gsub!(/you/, "HAL")           # => "Hello, HAL."
+  v.abort_transaction             # => "Hello, you."
+  v.transaction_open?             # => false
+
+  v.start_transaction             # => ... (a Marshal string)
+  v.start_transaction             # => ... (a Marshal string)
+
+  v.transaction_open?             # => true
+  v.gsub!(/you/, "HAL")           # => "Hello, HAL."
+
+  v.commit_transaction            # => "Hello, HAL."
+  v.transaction_open?             # => true
+  v.abort_transaction             # => "Hello, you."
+  v.transaction_open?             # => false
+
+Named Transaction Usage
+-----------------------
+  v = "Hello, you."               # => "Hello, you."
+  v.extend(Transaction::Simple)   # => "Hello, you."
+
+  v.start_transaction(:first)     # => ... (a Marshal string)
+  v.transaction_open?             # => true
+  v.transaction_open?(:first)     # => true
+  v.transaction_open?(:second)    # => false
+  v.gsub!(/you/, "world")         # => "Hello, world."
+
+  v.start_transaction(:second)    # => ... (a Marshal string)
+  v.gsub!(/world/, "HAL")         # => "Hello, HAL."
+  v.rewind_transaction(:first)    # => "Hello, you."
+  v.transaction_open?             # => true
+  v.transaction_open?(:first)     # => true
+  v.transaction_open?(:second)    # => false
+
+  v.gsub!(/you/, "world")         # => "Hello, world."
+  v.start_transaction(:second)    # => ... (a Marshal string)
+  v.gsub!(/world/, "HAL")         # => "Hello, HAL."
+  v.transaction_name              # => :second
+  v.abort_transaction(:first)     # => "Hello, you."
+  v.transaction_open?             # => false
+
+  v.start_transaction(:first)     # => ... (a Marshal string)
+  v.gsub!(/you/, "world")         # => "Hello, world."
+  v.start_transaction(:second)    # => ... (a Marshal string)
+  v.gsub!(/world/, "HAL")         # => "Hello, HAL."
+
+  v.commit_transaction(:first)    # => "Hello, HAL."
+  v.transaction_open?             # => false
+
+Contraindications
+-----------------
+While Transaction::Simple is very useful, it has some severe limitations that
+must be understood. Transaction::Simple:
+
+* uses Marshal. Thus, any object which cannot be Marshal-ed cannot use
+  Transaction::Simple.
+* does not manage resources. Resources external to the object and its instance
+  variables are not managed at all. However, all instance variables and
+  objects "belonging" to those instance variables are managed. If there are
+  object reference counts to be handled, Transaction::Simple will probably
+  cause problems.
+* is not thread-safe. In the ACID ("atomic, consistent, isolated, durable")
+  test, Transaction::Simple provides C and D, but it is up to the user of
+  Transaction::Simple to provide isolation. Transactions should be considered
+  "critical sections" in multi-threaded applications. Thread safety can be
+  ensured with Transaction::Simple::ThreadSafe.
+* does not maintain Object#__id__ values on rewind or abort. This may change
+  for future versions that will be Ruby 1.8 or better only.

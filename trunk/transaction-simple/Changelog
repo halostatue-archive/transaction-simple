@@ -1,0 +1,16 @@
+$Id$
+
+== Transaction::Simple 1.11
+* Cleaned up some documentation.
+
+== Transaction::Simple 1.1
+* Added Transaction::Simple::ThreadSafe for truly atomic and thread-safe
+  transactions.
+* Fixed the description of Transaction::Simple to note that it is *not* atomic
+  because it is not necessarily thread-safe.
+* Added support for named transactions. Named transactions can be used to make
+  checkpoints that can be committed, aborted, or rewound without explicitly
+  committing, aborting, or rewinding the intervening transactions.
+
+== Transaction::Simple 1.0
+* Created. Initial release.
