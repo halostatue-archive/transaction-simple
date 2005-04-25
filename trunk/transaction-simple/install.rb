@@ -20,7 +20,7 @@
 # 1) Run all unit test files (ending in .rb) found in all directories under
 #    tests/.
 # 2) Build Rdoc documentation from all files in bin/ (excluding .bat and .cmd),
-#    all .rb files in lib/, ./README, ./ChangeLog, and ./Install.
+#    all .rb files in lib/, ./Readme, ./Changelog, and ./Install.
 # 3) Build ri documentation from all files in bin/ (excluding .bat and .cmd),
 #    and all .rb files in lib/. This is disabled by default on Win32.
 # 4) Install commands from bin/ into the Ruby bin directory. On Windows, if a
@@ -52,7 +52,7 @@ end
 
   # Set these values to what you want installed.
 bins  = glob(%w{bin/**/*}).reject { |e| e =~ /\.(bat|cmd)$/ }
-rdoc  = glob(%w{bin/**/* lib/**/*.rb README ChangeLog Install}).reject { |e| e=~ /\.(bat|cmd)$/ }
+rdoc  = glob(%w{bin/**/* lib/**/*.rb Readme Changelog Install}).reject { |e| e=~ /\.(bat|cmd)$/ }
 ri    = glob(%w(bin/**/*.rb lib/**/*.rb)).reject { |e| e=~ /\.(bat|cmd)$/ }
 libs  = glob(%w{lib/**/*.rb})
 tests = glob(%w{tests/**/*.rb})
@@ -154,9 +154,9 @@ end
 #
 def build_rdoc(files)
   r = RDoc::RDoc.new
-  r.document(["--main", "README", "--title", "Diff::LCS -- A Diff Algorithm",
-              "--line-numbers"] + files)
-
+  r.document(["--main", "README", "--line-numbers", "--title",
+              "Transaction::Simple -- Active Object Transaction Support for Ruby"] +
+             files)
 rescue RDoc::RDocError => e
   $stderr.puts e.message
 rescue Exception => e

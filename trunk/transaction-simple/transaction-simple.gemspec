@@ -35,6 +35,6 @@ Gem::Specification.new do |s|
   s.description = description[2..-1].join(" ")
 
   s.has_rdoc = true
-  s.rdoc_options = ["--title", "Transaction::Simple -- Simple object transaction support", "--main", "Transaction::Simple", "--line-numbers"]
-  s.extra_rdoc_files = %w(README ChangeLog Install)
+  s.rdoc_options = ["--title", "Transaction::Simple -- Active Object Transaction Support for Ruby", "--main", "Transaction::Simple", "--line-numbers"]
+  s.extra_rdoc_files = %w(Readme Changelog Install)
 end
