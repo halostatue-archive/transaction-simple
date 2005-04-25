@@ -1,2 +1,6 @@
-Simply run:
+Installing this package is as simple as:
+
 % ruby install.rb
+
+Alternatively, you can juse the RubyGem version of Uninheritable available as
+uninheritable-1.0.2.gem from the usual sources.
