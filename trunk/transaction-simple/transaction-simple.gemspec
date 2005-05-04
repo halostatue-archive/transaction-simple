@@ -16,9 +16,6 @@ Gem::Specification.new do |s|
 
   s.required_ruby_version = %(>=1.8.1)
 
-# s.executables =
-# s.bindir =
-
   s.test_files = %w{tests/tests.rb}
 
   s.autorequire = %q{transaction/simple}

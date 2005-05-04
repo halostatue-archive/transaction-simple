@@ -654,6 +654,15 @@ module Transaction
         end
       end
 
+      new_ivar = instance_variables - rr.instance_variables
+      new_ivar.each do |vv|
+        if respond_to?(:instance_variable_set)
+          instance_variable_set(vv, nil)
+        else
+          instance_eval(%q|#{vv} = nil|)
+        end
+      end
+
       if respond_to?(:instance_variable_get)
         rr.instance_variable_get(TRANSACTION_CHECKPOINT)
       else

@@ -7,6 +7,8 @@ $Id$
 * Added transaction groups. Transaction groups are wrapper objects to allow
   the coordination of transactions with a group of objects. There are both
   normal and threadsafe versions of transaction groups.
+* Fixed a long-standing problem where instance variables that were added to an
+  object after a transaction was started would remain.
 
 == Transaction::Simple 1.2.0
 * Added a RubyGem.
