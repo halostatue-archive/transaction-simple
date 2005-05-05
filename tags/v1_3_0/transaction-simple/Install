@@ -1,0 +1,6 @@
+Installing this package is as simple as:
+
+% ruby install.rb
+
+Alternatively, you can juse the RubyGem version of Transaction::Simple
+available as transaction-simple-1.3.0.gem from the usual sources.
