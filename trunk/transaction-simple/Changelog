@@ -9,6 +9,7 @@ $Id$
   normal and threadsafe versions of transaction groups.
 * Fixed a long-standing problem where instance variables that were added to an
   object after a transaction was started would remain.
+* Reorganised unit tests.
 
 == Transaction::Simple 1.2.0
 * Added a RubyGem.

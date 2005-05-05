@@ -55,7 +55,7 @@ bins  = glob(%w{bin/**/*}).reject { |e| e =~ /\.(bat|cmd)$/ }
 rdoc  = glob(%w{bin/**/* lib/**/*.rb Readme Changelog Install}).reject { |e| e=~ /\.(bat|cmd)$/ }
 ri    = glob(%w(bin/**/*.rb lib/**/*.rb)).reject { |e| e=~ /\.(bat|cmd)$/ }
 libs  = glob(%w{lib/**/*.rb})
-tests = glob(%w{tests/**/*.rb})
+tests = glob(%w{tests/**/tc_*.rb})
 
 def do_bins(bins, target, strip = 'bin/')
   bins.each do |bf|

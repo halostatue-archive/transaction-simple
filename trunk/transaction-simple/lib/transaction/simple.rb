@@ -654,7 +654,7 @@ module Transaction
         end
       end
 
-      new_ivar = instance_variables - rr.instance_variables
+      new_ivar = instance_variables - rr.instance_variables - SKIP_TRANSACTION_VARS
       new_ivar.each do |vv|
         if respond_to?(:instance_variable_set)
           instance_variable_set(vv, nil)
