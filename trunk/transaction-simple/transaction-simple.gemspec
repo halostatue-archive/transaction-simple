@@ -16,7 +16,7 @@ Gem::Specification.new do |s|
 
   s.required_ruby_version = %(>=1.8.1)
 
-  s.test_files = %w{tests/**/tc_*.rb}
+  s.test_files = Dir.glob('tests/tc_*.rb')
 
   s.autorequire = %q{transaction/simple}
   s.require_paths = %w{lib}
