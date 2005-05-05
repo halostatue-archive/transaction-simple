@@ -101,20 +101,14 @@ file TARDIST => [ :test ] do |t|
 end
 task TARDIST => [ :test ]
 
-def sign(file)
-  begin
-    sh %("C:\\Program Files\\Windows Privacy Tools\\GnuPG\\Gpg.exe" -ba #{file.gsub(%r</>) do '\\'; end})
-  rescue RuntimeError
-    raise unless File.exist?("#{file}.asc")
-  end
-end
-
-task :signtar => [ :tar ] do
-  sign TARDIST
-end
-task :signgem => [ :gem ] do
-  sign "../#{DISTDIR}.gem"
+desc "Build the rdoc documentation for Transaction::Simple"
+task :docs do
+  require 'rdoc/rdoc'
+  rdoc_options = %w(--title Transaction::Simple --main Readme --line-numbers)
+  files = FileList[*%w(Readme Changelog bin/**/*.rb lib/**/*.rb)]
+  rdoc_options += files.to_a
+  RDoc::RDoc.new.document(rdoc_options)
 end
 
 desc "Build everything."
-task :default => [ :signtar, :signgem ]
+task :default => [ :tar, :gem ]
