@@ -1,6 +1,6 @@
 Gem::Specification.new do |s|
   s.name = %q(transaction-simple)
-  s.version = %q(1.3.0) # Overridden in the rakefile
+  s.version = %q(1.3.1) # Overridden in the rakefile
   s.author = %q{Austin Ziegler}
   s.email = %q{transaction-simple@halostatue.ca}
   s.homepage = %q{http://rubyforge.org/projects/trans-simple}

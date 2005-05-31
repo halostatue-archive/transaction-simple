@@ -1,6 +1,9 @@
 $Id$
 
-== Transaction::simple 1.3.0
+== Transaction::Simple 1.3.1
+* Fixed up behaviour to remove a lot of #respond_to? calls. 
+
+== Transaction::Simple 1.3.0
 * Updated to fix a lot of warnings.
 * Added a per-transaction-object list of excluded instance variables.
 * Moved Transaction::simple::ThreadSafe to transaction/simple/threadsafe.

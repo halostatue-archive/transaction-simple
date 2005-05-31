@@ -271,7 +271,7 @@ module Transaction
     #   objects.
     #
   module Simple
-    TRANSACTION_SIMPLE_VERSION = '1.3.0'
+    TRANSACTION_SIMPLE_VERSION = '1.3.1'
 
       # Sets the Transaction::Simple debug object. It must respond to #<<.
       # Sets the transaction debug object. Debugging will be performed
@@ -544,6 +544,20 @@ module Transaction
       @transaction_exclusions ||= []
     end
 
+    def __get__!(variable)
+      instance_variable_get(variable.intern)
+    rescue NoMethodError
+      instance_eval variable
+    end
+    private :__get__!
+
+    def __set__!(variable, value)
+      instance_variable_set(variable.intern, value)
+    rescue NoMethodError
+      instance_eval %Q[#{variable} = value]
+    end
+    private :__set__!
+
     class << self
       def __common_start(name, vars, &block)
         if vars.empty?
@@ -557,8 +571,12 @@ module Transaction
             vars.each do |vv|
               vv.extend(Transaction::Simple)
               vv.start_transaction(name)
-              vlevel[vv.__id__] = vv.instance_variable_get(:@__transaction_level__)
-              vv.instance_variable_set(:@__transaction_block__, vlevel[vv.__id__])
+              vlevel[vv.__id__] = vv.__send__(:__get__!,
+                                              "@__transaction_level__")
+              vv.send(:__set__!, "@__transaction_block__",
+                      vlevel[vv.__id__])
+#             vlevel[vv.__id__] = vv.instance_variable_get(:@__transaction_level__)
+#             vv.instance_variable_set(:@__transaction_block__, vlevel[vv.__id__])
             end
 
             yield(*vars)
@@ -566,13 +584,18 @@ module Transaction
             vars.each do |vv|
               if name.nil? and vv.transaction_open?
                 loop do
-                  tlevel = vv.instance_variable_get(:@__transaction_level__) || -1
-                  vv.instance_variable_set(:@__transaction_block__, -1)
+                  tlevel = vv.__send__(:__get__!,
+                                       "@__transaction_level__") || -1
+                  vv.__send__(:__set__!, "@__transaction_block__", -1)
+#                 vv.instance_variable_set(:@__transaction_block__, -1)
+#                 tlevel = vv.instance_variable_get(:@__transaction_level__) || -1
+#                 vv.instance_variable_set(:@__transaction_block__, -1)
                   break if tlevel < vlevel[vv.__id__]
                   vv.abort_transaction if vv.transaction_open?
                 end
               elsif vv.transaction_open?(name)
-                vv.instance_variable_set(:@__transaction_block__, -1)
+                vv.__send__(:__set__!, "@__transaction_block__", -1)
+#               vv.instance_variable_set(:@__transaction_block__, -1)
                 vv.abort_transaction(name)
               end
             end
@@ -582,13 +605,14 @@ module Transaction
             vars.each do |vv|
               if name.nil? and vv.transaction_open?
                 loop do
-                  tlevel = vv.instance_variable_get(:@__transaction_level__) || -1
+                  tlevel = vv.__send__(:__get__!,
+                                       "@__transaction_level__") || -1
                   break if tlevel < vlevel[vv.__id__]
-                  vv.instance_variable_set(:@__transaction_block__, -1)
+                  vv.__send__(:__set__!, "@__transaction_block__", -1)
                   vv.commit_transaction if vv.transaction_open?
                 end
               elsif vv.transaction_open?(name)
-                vv.instance_variable_set(:@__transaction_block__, -1)
+                vv.__send__(:__set__!, "@__transaction_block__", -1)
                 vv.commit_transaction(name)
               end
             end
@@ -633,13 +657,13 @@ module Transaction
     end
 
     TRANSACTION_CHECKPOINT  = "@__transaction_checkpoint__" #:nodoc:
-    SKIP_TRANSACTION_VARS   = [TRANSACTION_CHECKPOINT, "@__transaction_level__"] #:nodoc:
+    SKIP_TRANSACTION_VARS   = [TRANSACTION_CHECKPOINT, "@__transaction_level__", "@__transaction_ivmeth__"] #:nodoc:
 
     def __rewind_this_transaction #:nodoc:
       rr = Marshal.restore(@__transaction_checkpoint__)
 
       begin
-        self.replace(rr) if respond_to?(:replace)
+        self.replace(rr)
       rescue
         nil
       end
@@ -647,35 +671,25 @@ module Transaction
       rr.instance_variables.each do |vv|
         next if SKIP_TRANSACTION_VARS.include?(vv)
         next if self.transaction_exclusions.include?(vv)
-        if respond_to?(:instance_variable_get)
-          instance_variable_set(vv, rr.instance_variable_get(vv))
-        else
-          instance_eval(%q|#{vv} = rr.instance_eval("#{vv}")|)
-        end
+
+        __set__!(vv, rr.__send__(:__get__!, vv))
       end
 
-      new_ivar = instance_variables - rr.instance_variables - SKIP_TRANSACTION_VARS
-      new_ivar.each do |vv|
-        if respond_to?(:instance_variable_set)
-          instance_variable_set(vv, nil)
-        else
-          instance_eval(%q|#{vv} = nil|)
-        end
+      rest = instance_variables - rr.instance_variables
+      rest.each do |vv|
+        next if SKIP_TRANSACTION_VARS.include?(vv)
+        next if self.transaction_exclusions.include?(vv)
+
+        __set__!(vv, nil)
       end
 
-      if respond_to?(:instance_variable_get)
-        rr.instance_variable_get(TRANSACTION_CHECKPOINT)
-      else
-        rr.instance_eval(TRANSACTION_CHECKPOINT)
-      end
+      rr.__send__(:__get__!, TRANSACTION_CHECKPOINT)
     end
 
     def __commit_transaction #:nodoc:
-      if respond_to?(:instance_variable_get)
-        @__transaction_checkpoint__ = Marshal.restore(@__transaction_checkpoint__).instance_variable_get(TRANSACTION_CHECKPOINT)
-      else
-        @__transaction_checkpoint__ = Marshal.restore(@__transaction_checkpoint__).instance_eval(TRANSACTION_CHECKPOINT)
-      end
+      old = Marshal.restore(@__transaction_checkpoint__)
+      __set__!(@__transcation_checkpoint__,
+               old.__send__(:__get__!, TRANSACTION_CHECKPOINT))
 
       @__transaction_level__ -= 1
       @__transaction_names__.pop
