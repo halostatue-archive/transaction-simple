@@ -23,7 +23,7 @@
 #--
 # Transaction::Simple
 #   Simple object transaction support for Ruby
-#   Version 1.3.0
+#   Version 1.3.1
 #
 # Copyright (c) 2003 - 2005 Austin Ziegler
 #
@@ -102,7 +102,7 @@ module Transaction
     # duplicated and frozen before using.
     #
     # Copyright::   Copyright © 2003 - 2005 by Austin Ziegler
-    # Version::     1.3.0
+    # Version::     1.3.1
     # Licence::     MIT-Style
     #
     # Thanks to David Black for help with the initial concept that led to
@@ -653,6 +653,7 @@ module Transaction
       if @__transaction_level__ < 1
         @__transaction_level__ = 0
         @__transaction_names__ = []
+        @__transaction_checkpoint__ = nil
       end
     end
 
@@ -697,6 +698,7 @@ module Transaction
       if @__transaction_level__ < 1
         @__transaction_level__ = 0
         @__transaction_names__ = []
+        @__transaction_checkpoint__ = nil
       end
     end
 

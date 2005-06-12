@@ -20,15 +20,18 @@ levels of transactions can be committed, aborted, or rewound by
 referring to the appropriate name of the transaction. Names may be any
 object except nil.
 
-Version 1.3.0 of Transaction::Simple adds transaction groups. A
-transaction group is an object wrapper that manages a group of objects
-as if they were a single object for the purpose of transaction
-management. All transactions for this group of objects should be
-performed against the transaction group object, not against individual
-objects in the group.
+Transaction groups are also supported. A transaction group is an object
+wrapper that manages a group of objects as if they were a single object
+for the purpose of transaction management. All transactions for this
+group of objects should be performed against the transaction group
+object, not against individual objects in the group.
+
+Version 1.3.1 of Transaction::Simple explicitly releases the transaction
+checkpoint in the object when the last open transaction is committed or
+aborted.
 
 Copyright:    Copyright © 2003 - 2005 by Austin Ziegler
-Version:      1.3.0
+Version:      1.3.1
 Licence:      MIT-Style
 
 Thanks to David Black and Mauricio Fernández for their help with this
