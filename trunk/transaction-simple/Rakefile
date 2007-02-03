@@ -1,51 +1,45 @@
 #! /usr/bin/env rake
-$LOAD_PATH.unshift('lib')
+# -*- ruby -*-
 
 require 'rubygems'
-require 'rake/gempackagetask'
-require 'rake/contrib/rubyforgepublisher'
+require 'hoe'
+
+$LOAD_PATH.unshift('lib')
+
 require 'transaction/simple'
 require 'archive/tar/minitar'
 require 'zlib'
 
+TSVER   = Transaction::Simple::TRANSACTION_SIMPLE_VERSION
 DISTDIR = "transaction-simple-#{Transaction::Simple::TRANSACTION_SIMPLE_VERSION}"
 TARDIST = "../#{DISTDIR}.tar.gz"
 
-DATE_RE = %r<(\d{4})[./-]?(\d{2})[./-]?(\d{2})(?:[\sT]?(\d{2})[:.]?(\d{2})[:.]?(\d{2})?)?>
+Hoe.new "transaction-simple", TSVER do |p|
+  p.rubyforge_name  = "trans-simple"
+# p.test_globs      = %w(tests/**/tc_*.rb)
+  # This is a lie becasue I will continue to use Archive::Tar::Minitar.
+  p.need_tar        = false
+  # need_zip - Should package create a zipfile? [default: false]
 
-if ENV['RELEASE_DATE']
-  year, month, day, hour, minute, second = DATE_RE.match(ENV['RELEASE_DATE']).captures
-  year ||= 0
-  month ||= 0
-  day ||= 0
-  hour ||= 0
-  minute ||= 0
-  second ||= 0
-  ReleaseDate = Time.mktime(year, month, day, hour, minute, second)
-else
-  ReleaseDate = nil
-end
+  p.author          = "Austin Ziegler"
+  p.email           = "austin@rubyforge.org"
+  p.ulr             = "http://rubyforge.org/projects/trans-simple"
+  p.summary         = "Simple object transaction support for Ruby."
+  p.changes         = p.paragraphs_of("History.txt", 0..1)
+  p.description     = p.paragraphs_of("Readme.txt", 0..2)
 
-task :test do |t|
-  require 'test/unit/testsuite'
-  require 'test/unit/ui/console/testrunner'
+# p.rdoc_pattern    = %r{^(lib|bin)|Changelog|Install|LICENCE|Readme}
 
-  runner = Test::Unit::UI::Console::TestRunner
+  # extra_deps - An array of rubygem dependencies.
+  # clean_globs - An array of file patterns to delete on clean.
+  # rdoc_pattern - A regexp to match documentation files against the manifest.
+  # spec_extras - A hash of extra values to set in the gemspec.
+  # test_globs - An array of test file patterns [default: test/**/test_*.rb]
 
-  $LOAD_PATH.unshift('tests')
-  $stderr.puts "Checking for test cases:" if t.verbose
-  Dir['tests/**/tc_*.rb'].each do |testcase|
-    $stderr.puts "\t#{testcase}" if t.verbose
-    load testcase
-  end
-
-  suite = Test::Unit::TestSuite.new("Transaction::Simple")
-
-  ObjectSpace.each_object(Class) do |testcase|
-    suite << testcase.suite if testcase < Test::Unit::TestCase
-  end
-
-  runner.run(suite)
+  # bin_files
+  # lib_files
+  # spec
+  # test_files
 end
 
 spec = eval(File.read("transaction-simple.gemspec"))
@@ -67,7 +61,7 @@ file TARDIST => [ :test ] do |t|
       files = Dir["#{current}/**/*"].select { |dd| dd !~ %r{(?:/CVS/?|~$)} }
       files.map! do |dd|
         ddnew = dd.gsub(/^#{current}/, DISTDIR)
-        mtime = ReleaseDate || File.stat(dd).mtime
+        mtime = File.stat(dd).mtime
         if File.directory?(dd)
           { :name => ddnew, :mode => 0755, :dir => true, :mtime => mtime }
         else

@@ -1,41 +1,39 @@
 = Transaction::Simple for Ruby
+
 Transaction::Simple provides a generic way to add active transaction
-support to objects. The transaction methods added by this module will
-work with most objects, excluding those that cannot be Marshal-ed
-(bindings, procedure objects, IO instances, or singleton objects).
+support to objects. The transaction methods added by this module will work
+with most objects, excluding those that cannot be Marshal-ed (bindings,
+procedure objects, IO instances, or singleton objects).
 
-The transactions supported by Transaction::Simple are not backend
-transaction; that is, they are not associated with any sort of data
-store. They are "live" transactions occurring in memory and in the
-object itself. This is to allow "test" changes to be made to an object
-before making the changes permanent.
+The transactions supported by Transaction::Simple are not associated with
+any sort of data store. They are "live" transactions occurring in memory
+on the object itself. This is to allow "test" changes to be made to an
+object before making the changes permanent.
 
-Transaction::Simple can handle an "infinite" number of transaction
-levels (limited only by memory). If I open two transactions, commit the
-second, but abort the first, the object will revert to the original
-version.
+Transaction::Simple can handle an "infinite" number of transaction levels
+(limited only by memory). If I open two transactions, commit the second,
+but abort the first, the object will revert to the original version.
 
-Transaction::Simple supports "named" transactions, so that multiple
-levels of transactions can be committed, aborted, or rewound by
-referring to the appropriate name of the transaction. Names may be any
-object except nil.
+Transaction::Simple supports "named" transactions, so that multiple levels
+of transactions can be committed, aborted, or rewound by referring to the
+appropriate name of the transaction. Names may be any object except nil.
 
 Transaction groups are also supported. A transaction group is an object
 wrapper that manages a group of objects as if they were a single object
-for the purpose of transaction management. All transactions for this
-group of objects should be performed against the transaction group
-object, not against individual objects in the group.
+for the purpose of transaction management. All transactions for this group
+of objects should be performed against the transaction group object, not
+against individual objects in the group.
 
-Version 1.3.1 of Transaction::Simple explicitly releases the transaction
-checkpoint in the object when the last open transaction is committed or
-aborted.
+Version 1.4.0 of Transaction::Simple adds a new post-rewind hook so that
+complex graph objects of the type in tests/tc_broken_graph.rb can correct
+themselves.
 
-Copyright:    Copyright © 2003 - 2005 by Austin Ziegler
-Version:      1.3.1
-Licence:      MIT-Style
+Copyright:    Copyright (c) 2003 - 2007 by Austin Ziegler
+Version:      1.4.0
+Licence:      MIT-Style; see Licence.txt
 
-Thanks to David Black and Mauricio Fernández for their help with this
-library.
+Thanks to David Black, Mauricio FernÃ¡ndez, Patrick Hurley, Pit Capitain, and
+Matz for their assistance with this library.
 
 == Usage
   include 'transaction/simple'
@@ -166,31 +164,40 @@ library.
   y                               = -> "And you, too."
 
 == Thread Safety
-Threadsafe version of Transaction::Simple and Transaction::Simple::Group
+Threadsafe versions of Transaction::Simple and Transaction::Simple::Group
 exist; these are loaded from 'transaction/simple/threadsafe' and
-'transaction/simple/threadsafe/group', respectively, and are represented
-in Ruby code as Transaction::Simple::ThreadSafe and
+'transaction/simple/threadsafe/group', respectively, and are represented in
+Ruby code as Transaction::Simple::ThreadSafe and
 Transaction::Simple::ThreadSafe::Group, respectively.
 
 == Contraindications
-While Transaction::Simple is very useful, it has some severe limitations
-that must be understood. Transaction::Simple:
+While Transaction::Simple is very useful, it has limitations that must be
+understood prior to using it. Transaction::Simple:
 
 * uses Marshal. Thus, any object which cannot be Marshal-ed cannot use
   Transaction::Simple. In my experience, this affects singleton objects
-  more often than any other object. It may be that Ruby 2.0 will solve
-  this problem.
-* does not manage resources. Resources external to the object and its
-  instance variables are not managed at all. However, all instance
+  more often than any other object.
+* does not manage external resources. Resources external to the object and
+  its instance variables are not managed at all. However, all instance
   variables and objects "belonging" to those instance variables are
   managed. If there are object reference counts to be handled,
   Transaction::Simple will probably cause problems.
 * is not thread-safe. In the ACID ("atomic, consistent, isolated,
-  durable") test, Transaction::Simple provides C and D, but it is up to
-  the user of Transaction::Simple to provide isolation. Transactions
-  should be considered "critical sections" in multi-threaded
-  applications. Thread safety can be ensured with
-  Transaction::Simple::ThreadSafe. With transaction groups, some level
-  of atomicity is assured.
-* does not maintain Object#__id__ values on rewind or abort. This may
-  change for future versions.
+  durable") test, Transaction::Simple provides consistency and durability, but
+  cannot itself provide isolation. Transactions should be considered "critical
+  sections" in multi-threaded applications. Thread safety of the transaction
+  acquisition and release process itself can be ensured with the thread-safe
+  version, Transaction::Simple::ThreadSafe. With transaction groups, some
+  level of atomicity is assured.
+* does not maintain Object#__id__ values on rewind or abort. This only affects
+  complex self-referential graphs. tests/tc_broken_graph.rb demonstrates this
+  and its mitigation with the new post-rewind hook. #_post_transaction_rewind.
+  Matz has implemented an experimental feature in Ruby 1.9 that may find its
+  way into the released Ruby 1.9.1 and ultimately Ruby 2.0 that would obviate
+  the need for #_post_transaction_rewind. Pit Capitain has also suggested a
+  workaround that does not require changes to core Ruby, but does not work in
+  all cases. A final resolution is still pending further discussion.
+* Can be a memory hog if you use many levels of transactions on many
+  objects.
+
+$Id$

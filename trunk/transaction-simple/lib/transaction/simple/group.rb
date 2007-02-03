@@ -1,3 +1,16 @@
+#--
+# Transaction::Simple
+# Simple object transaction support for Ruby
+# http://rubyforge.org/projects/trans-simple/
+#   Version 1.4.0
+#
+# Licensed under a MIT-style licence. See Licence.txt in the main
+# distribution for full licensing information.
+#
+# Copyright (c) 2003 - 2007 Austin Ziegler
+#
+# $Id$
+#++
 require 'transaction/simple'
 
   # A transaction group is an object wrapper that manages a group of objects

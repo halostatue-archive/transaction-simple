@@ -1,3 +1,16 @@
+#--
+# Transaction::Simple
+# Simple object transaction support for Ruby
+# http://rubyforge.org/projects/trans-simple/
+#   Version 1.4.0
+#
+# Licensed under a MIT-style licence. See Licence.txt in the main
+# distribution for full licensing information.
+#
+# Copyright (c) 2003 - 2007 Austin Ziegler
+#
+# $Id$
+#++
 require 'transaction/simple'
 require 'thread'
 
@@ -14,7 +27,7 @@ end
   # lock cannot be obtained immediately, a
   # Transaction::TransactionThreadError will be raised.
   #
-  # Thanks to Mauricio Fern·ndez for help with getting this part working.
+  # Thanks to Mauricio Fern√°ndez for help with getting this part working.
   #
   # Threadsafe transactions can be used in any place that normal
   # transactions would. The main difference would be in setup:
