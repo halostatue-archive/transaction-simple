@@ -56,7 +56,7 @@ module Transaction::Simple::Test
       assert_not_equal(parent.object_id, parent.children[0].parent.object_id)
     end
 
-    def test_broken_graph
+    def test_fixed_graph
       parent = FixedParent.new
       parent << Child.new
       assert_equal(parent.object_id, parent.children[0].parent.object_id)

@@ -14,7 +14,10 @@
 require 'transaction/simple'
 require 'thread'
 
-class Transaction::TransactionThreadError < StandardError
+module Transaction
+  # A standard exception for transaction errors involving threadsafe
+  # transactions.
+  class TransactionThreadError < TransactionError; end
 end
 
   # = Transaction::Simple::ThreadSafe
@@ -27,7 +30,7 @@ end
   # lock cannot be obtained immediately, a
   # Transaction::TransactionThreadError will be raised.
   #
-  # Thanks to Mauricio Fernández for help with getting this part working.
+  # Thanks to Mauricio Fernandez for help with getting this part working.
   #
   # Threadsafe transactions can be used in any place that normal
   # transactions would. The main difference would be in setup:

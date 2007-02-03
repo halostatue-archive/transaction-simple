@@ -36,11 +36,12 @@ Hoe.new "transaction-simple", TSVER do |p|
   p.url             = "http://rubyforge.org/projects/trans-simple"
   p.summary         = "Simple object transaction support for Ruby."
   p.changes         = p.paragraphs_of("History.txt", 0..1).join("\n\n")
-  p.description     = p.paragraphs_of("Readme.txt", 0..2).join("\n\n")
+  p.description     = p.paragraphs_of("Readme.txt", 1..1).join("\n\n")
 
   p.spec_extras[:required_ruby_version] = ">=1.8.2"
   p.spec_extras[:extra_rdoc_files] = MANIFEST.grep(/txt$/) -
     ["Manifest.txt"]
+  p.clean_globs     << "./**/log"
 
   # extra_deps - An array of rubygem dependencies.
   # clean_globs - An array of file patterns to delete on clean.
@@ -78,9 +79,13 @@ file TARFILE => [ :test ] do |t|
   }
 
   begin
+    unless File.directory?(File.dirname(t.name))
+      require 'fileutils'
+      File.mkdir_p File.dirname(t.name)
+    end
     tf = File.open(t.name, 'wb')
     gz = Zlib::GzipWriter.new(tf)
-    tw = Archive::Tar:Minitar::Writer.new(gz)
+    tw = Archive::Tar::Minitar::Writer.new(gz)
 
     files.each do |entry|
       if entry[:dir]

@@ -2,7 +2,10 @@
 
 * Adding a post-rewind hook (#_post_transaction_rewind) so that complex
   graph objects can correct themselves after rewinding. See the
-  documentation and tests/tc_broken_graph.rb for more information.
+  documentation for #rewind_transaction and tests/tc_broken_graph.rb for
+  more information.
+* Removed all warnings.
+* Deprecated the #transaction method.
 * Various administrative changes:
   - Converted to a hoe-driven project.
   - Made the gem and .tar.gz files idempotent.

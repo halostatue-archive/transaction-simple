@@ -21,8 +21,26 @@ module Transaction::Simple::Test
   class TransactionSimple < Test::Unit::TestCase #:nodoc:
     VALUE = "Now is the time for all good men to come to the aid of their country."
 
+    class Value
+      def initialize
+        @value = VALUE.dup
+      end
+
+      def method_missing(meth, *args, &block)
+        @value.__send__(meth, *args, &block)
+      end
+
+      def ==(other)
+        other == @value
+      end
+
+      def to_str
+        @value
+      end
+    end
+
     def setup
-      @value = VALUE.dup
+      @value = Value.new
       @value.extend(Transaction::Simple)
     end
 
@@ -287,7 +305,7 @@ module Transaction::Simple::Test
       assert_equal(true, @value.transaction_open?)
       @value.instance_variable_set("@foo", "bar")
       @value.rewind_transaction
-      assert_nil(@value.instance_variable_get("@foo"))
+      assert_equal(false, @value.instance_variables.include?("@foo"))
     end
   end
 end
