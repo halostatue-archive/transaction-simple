@@ -110,6 +110,7 @@ task :build_manifest do |t|
   Find.find(".") do |path|
     next if File.directory?(path)
     next if path =~ /\.svn/
+    next if path =~ %r{/research/}
     next if path =~ /\.swp$/
     next if path =~ /~$/
     paths << path.sub(%r{^\./}, '')
