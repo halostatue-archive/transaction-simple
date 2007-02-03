@@ -19,7 +19,6 @@ $stderr.puts "Checking for test cases:"
 
 Dir[File.join(File.dirname($0), 'test_*.rb')].each do |testcase|
   next if File.basename(testcase) == File.basename(__FILE__)
-  next unless testcase =~ /simple.rb$/
   $stderr.puts "\t#{testcase}"
   load testcase
 end
