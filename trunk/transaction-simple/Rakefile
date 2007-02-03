@@ -19,15 +19,11 @@ require 'hoe'
 $LOAD_PATH.unshift('lib')
 
 require 'transaction/simple'
-require 'archive/tar/minitar'
-require 'zlib'
 
 TSVER     = Transaction::Simple::TRANSACTION_SIMPLE_VERSION
 DISTDIR   = "transaction-simple-#{TSVER}"
 TARFILE   = "pkg/#{DISTDIR}.tar.gz"
 MANIFEST  = File.read("Manifest.txt").split
-
-# TODO Make a "build_manifest" option to generate Manifest.txt
 
 Hoe.new "transaction-simple", TSVER do |p|
   p.rubyforge_name  = "trans-simple"
@@ -37,10 +33,10 @@ Hoe.new "transaction-simple", TSVER do |p|
 
   p.author          = "Austin Ziegler"
   p.email           = "austin@rubyforge.org"
-  p.ulr             = "http://rubyforge.org/projects/trans-simple"
+  p.url             = "http://rubyforge.org/projects/trans-simple"
   p.summary         = "Simple object transaction support for Ruby."
-  p.changes         = p.paragraphs_of("History.txt", 0..1)
-  p.description     = p.paragraphs_of("Readme.txt", 0..2)
+  p.changes         = p.paragraphs_of("History.txt", 0..1).join("\n\n")
+  p.description     = p.paragraphs_of("Readme.txt", 0..2).join("\n\n")
 
   p.spec_extras[:required_ruby_version] = ">=1.8.2"
   p.spec_extras[:extra_rdoc_files] = MANIFEST.grep(/txt$/) -
@@ -61,6 +57,8 @@ end
 desc "Build a Transaction::Simple .tar.gz distribution."
 task :tar => [ TARFILE ]
 file TARFILE => [ :test ] do |t|
+  require 'archive/tar/minitar'
+  require 'zlib'
   files = MANIFEST.map { |f|
     fn = File.join(DISTDIR, f)
     tm = File.stat(f).mtime
@@ -99,3 +97,20 @@ file TARFILE => [ :test ] do |t|
   end
 end
 task :package => [ TARFILE ]
+
+task :build_manifest do |t|
+  require 'find'
+
+  paths = []
+  Find.find(".") do |path|
+    next if File.directory?(path)
+    next if path =~ /\.svn/
+    next if path =~ /\.swp$/
+    next if path =~ /~$/
+    paths << path.sub(%r{^\./}, '')
+  end
+
+  File.open("Manifest.txt", "w") do |f|
+    f.puts paths.sort.join("\n")
+  end
+end

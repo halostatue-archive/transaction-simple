@@ -28,9 +28,10 @@ Version 1.4.0 of Transaction::Simple adds a new post-rewind hook so that
 complex graph objects of the type in tests/tc_broken_graph.rb can correct
 themselves.
 
-Copyright:    Copyright (c) 2003 - 2007 by Austin Ziegler
-Version:      1.4.0
-Licence:      MIT-Style; see Licence.txt
+Copyright:  Copyright (c) 2003 - 2007 by Austin Ziegler
+Version:    1.4.0
+Homepage:   http://rubyforge.org/projects/trans-simple/
+Licence:    MIT-Style; see Licence.txt
 
 Thanks to David Black, Mauricio Fernández, Patrick Hurley, Pit Capitain, and
 Matz for their assistance with this library.
