@@ -17,6 +17,7 @@ $LOAD_PATH.unshift("#{File.dirname(__FILE__)}/../lib") if __FILE__ == $0
 
 $stderr.puts "Checking for test cases:"
 Dir['test_*.rb'].each do |testcase|
+  next if testcase == File.basename(__FILE__)
   $stderr.puts "\t#{testcase}"
   load testcase
 end

@@ -49,35 +49,21 @@ module Transaction
 
   te = "Transaction Error: %s"
 
-  Messages = {
-    :bad_debug_object =>
-    te % "the transaction debug object must respond to #<<.",
-      :unique_names =>
-    te % "named transactions must be unique.",
-      :no_transaction_open =>
-    te % "no transaction open.",
-      :cannot_rewind_no_transaction =>
-    te % "cannot rewind; there is no current transaction.",
-      :cannot_rewind_named_transaction =>
-    te % "cannot rewind to transaction %s because it does not exist.",
-      :cannot_rewind_transaction_before_block =>
-    te % "cannot rewind a transaction started before the execution block.",
-      :cannot_abort_no_transaction =>
-    te % "cannot abort; there is no current transaction.",
-      :cannot_abort_transaction_before_block =>
-    te % "cannot abort a transaction started before the execution block.",
-      :cannot_abort_named_transaction =>
-    te % "cannot abort nonexistant transaction %s.",
-      :cannot_commit_no_transaction =>
-    te % "cannot commit; there is no current transaction.",
-      :cannot_commit_transaction_before_block =>
-    te % "cannot commit a transaction started before the execution block.",
-      :cannot_commit_named_transaction =>
-    te % "cannot commit nonexistant transaction %s.",
-      :cannot_start_empty_block_transaction =>
-    te % "cannot start a block transaction with no objects.",
-      :cannot_obtain_transaction_lock =>
-    te % "cannot obtain transaction lock for #%s.",
+  Messages = { #:nodoc:
+    :bad_debug_object => te % "the transaction debug object must respond to #<<.",
+    :unique_names => te % "named transactions must be unique.",
+    :no_transaction_open => te % "no transaction open.",
+    :cannot_rewind_no_transaction => te % "cannot rewind; there is no current transaction.",
+    :cannot_rewind_named_transaction => te % "cannot rewind to transaction %s because it does not exist.",
+    :cannot_rewind_transaction_before_block => te % "cannot rewind a transaction started before the execution block.",
+    :cannot_abort_no_transaction => te % "cannot abort; there is no current transaction.",
+    :cannot_abort_transaction_before_block => te % "cannot abort a transaction started before the execution block.",
+    :cannot_abort_named_transaction => te % "cannot abort nonexistant transaction %s.",
+    :cannot_commit_no_transaction => te % "cannot commit; there is no current transaction.",
+    :cannot_commit_transaction_before_block => te % "cannot commit a transaction started before the execution block.",
+    :cannot_commit_named_transaction => te % "cannot commit nonexistant transaction %s.",
+    :cannot_start_empty_block_transaction => te % "cannot start a block transaction with no objects.",
+    :cannot_obtain_transaction_lock => te % "cannot obtain transaction lock for #%s.",
   }
 end
 
@@ -86,27 +72,25 @@ end
 #
 # == Introduction
 # Transaction::Simple provides a generic way to add active transaction
-# support to objects. The transaction methods added by this module will
-# work with most objects, excluding those that cannot be
-# <i>Marshal</i>ed (bindings, procedure objects, IO instances, or
-# singleton objects).
+# support to objects. The transaction methods added by this module will work
+# with most objects, excluding those that cannot be <i>Marshal</i>ed
+# (bindings, procedure objects, IO instances, or singleton objects).
 #
 # The transactions supported by Transaction::Simple are not backed
-# transactions; they are not associated with any sort of data store.
-# They are "live" transactions occurring in memory and in the object
-# itself. This is to allow "test" changes to be made to an object
-# before making the changes permanent.
+# transactions; they are not associated with any sort of data store. They
+# are "live" transactions occurring in memory and in the object itself. This
+# is to allow "test" changes to be made to an object before making the
+# changes permanent.
 #
-# Transaction::Simple can handle an "infinite" number of transaction
-# levels (limited only by memory). If I open two transactions, commit
-# the second, but abort the first, the object will revert to the
-# original version.
+# Transaction::Simple can handle an "infinite" number of transaction levels
+# (limited only by memory). If I open two transactions, commit the second,
+# but abort the first, the object will revert to the original version.
 # 
-# Transaction::Simple supports "named" transactions, so that multiple
-# levels of transactions can be committed, aborted, or rewound by
-# referring to the appropriate name of the transaction. Names may be any
-# object *except* +nil+. As with Hash keys, String names will be
-# duplicated and frozen before using.
+# Transaction::Simple supports "named" transactions, so that multiple levels
+# of transactions can be committed, aborted, or rewound by referring to the
+# appropriate name of the transaction. Names may be any object *except*
+# +nil+. As with Hash keys, String names will be duplicated and frozen
+# before using.
 #
 # Copyright::   Copyright (c) 2003 - 2007 by Austin Ziegler
 # Version::     1.4.0
@@ -242,11 +226,10 @@ end
 #   v.transaction_open?             # -> false
 #
 # == Thread Safety
-# Threadsafe version of Transaction::Simple and
-# Transaction::Simple::Group exist; these are loaded from
-# 'transaction/simple/threadsafe' and
-# 'transaction/simple/threadsafe/group', respectively, and are
-# represented in Ruby code as Transaction::Simple::ThreadSafe and
+# Threadsafe versions of Transaction::Simple and Transaction::Simple::Group
+# exist; these are loaded from 'transaction/simple/threadsafe' and
+# 'transaction/simple/threadsafe/group', respectively, and are represented
+# in Ruby code as Transaction::Simple::ThreadSafe and
 # Transaction::Simple::ThreadSafe::Group, respectively.
 #
 # == Contraindications
@@ -262,57 +245,55 @@ end
 #   managed. If there are object reference counts to be handled,
 #   Transaction::Simple will probably cause problems.
 # * is not thread-safe. In the ACID ("atomic, consistent, isolated,
-#   durable") test, Transaction::Simple provides consistency and durability, but
-#   cannot itself provide isolation. Transactions should be considered "critical
-#   sections" in multi-threaded applications. Thread safety of the transaction
-#   acquisition and release process itself can be ensured with the thread-safe
-#   version, Transaction::Simple::ThreadSafe. With transaction groups, some
-#   level of atomicity is assured.
-# * does not maintain Object#__id__ values on rewind or abort. This only affects
-#   complex self-referential graphs. tests/tc_broken_graph.rb demonstrates this
-#   and its mitigation with the new post-rewind hook. #_post_transaction_rewind.
-#   Matz has implemented an experimental feature in Ruby 1.9 that may find its
-#   way into the released Ruby 1.9.1 and ultimately Ruby 2.0 that would obviate
-#   the need for #_post_transaction_rewind. Pit Capitain has also suggested a
-#   workaround that does not require changes to core Ruby, but does not work in
-#   all cases. A final resolution is still pending further discussion.
+#   durable") test, Transaction::Simple provides consistency and durability,
+#   but cannot itself provide isolation. Transactions should be considered
+#   "critical sections" in multi-threaded applications. Thread safety of the
+#   transaction acquisition and release process itself can be ensured with
+#   the thread-safe version, Transaction::Simple::ThreadSafe. With
+#   transaction groups, some level of atomicity is assured.
+# * does not maintain Object#__id__ values on rewind or abort. This only
+#   affects complex self-referential graphs. tests/tc_broken_graph.rb
+#   demonstrates this and its mitigation with the new post-rewind hook.
+#   #_post_transaction_rewind. Matz has implemented an experimental feature
+#   in Ruby 1.9 that may find its way into the released Ruby 1.9.1 and
+#   ultimately Ruby 2.0 that would obviate the need for
+#   #_post_transaction_rewind. Pit Capitain has also suggested a workaround
+#   that does not require changes to core Ruby, but does not work in all
+#   cases. A final resolution is still pending further discussion.
 # * Can be a memory hog if you use many levels of transactions on many
 #   objects.
 module Transaction::Simple
   TRANSACTION_SIMPLE_VERSION = '1.4.0'
 
-  # Sets the Transaction::Simple debug object. It must respond to #<<.
-  # Sets the transaction debug object. Debugging will be performed
-  # automatically if there's a debug object. The generic transaction
-  # error class.
-  def self.debug_io=(io)
-    if io.nil?
-      @tdi        = nil
-      @debugging  = false
-    else
-      raise Transaction::TransactionError, Transaction::Messages[:bad_debug_object] unless io.respond_to?(:<<)
-      @tdi = io
-      @debugging = true
+  class << self
+    # Sets the Transaction::Simple debug object. It must respond to #<<.
+    # Debugging will be performed automatically if there's a debug object.
+    def debug_io=(io)
+      if io.nil?
+        @tdi        = nil
+        @debugging  = false
+      else
+        raise Transaction::TransactionError, Transaction::Messages[:bad_debug_object] unless io.respond_to?(:<<)
+        @tdi = io
+        @debugging = true
+      end
+    end
+
+    # Returns +true+ if we are debugging.
+    def debugging?
+      @debugging
+    end
+
+    # Returns the Transaction::Simple debug object. It must respond to #<<.
+    def debug_io
+      @tdi ||= ""
+      @tdi
     end
   end
 
-  # Returns +true+ if we are debugging.
-  def self.debugging?
-    @debugging
-  end
-
-  # Returns the Transaction::Simple debug object. It must respond to
-  # #<<.
-  def self.debug_io
-    @tdi ||= ""
-    @tdi
-  end
-
-  # If +name+ is +nil+ (default), then returns +true+ if there is
-  # currently a transaction open.
-  #
-  # If +name+ is specified, then returns +true+ if there is currently a
-  # transaction that responds to +name+ open.
+  # If +name+ is +nil+ (default), then returns +true+ if there is currently
+  # a transaction open. If +name+ is specified, then returns +true+ if there
+  # is currently a transaction that responds to +name+ open.
   def transaction_open?(name = nil)
     if name.nil?
       Transaction::Simple.debug_io << "Transaction " << "[#{(@__transaction_checkpoint__.nil?) ? 'closed' : 'open'}]\n" if Transaction::Simple.debugging?
@@ -323,8 +304,8 @@ module Transaction::Simple
     end
   end
 
-  # Returns the current name of the transaction. Transactions not
-  # explicitly named are named +nil+.
+  # Returns the current name of the transaction. Transactions not explicitly
+  # named are named +nil+.
   def transaction_name
     raise Transaction::TransactionError, Transaction::Messages[:no_transaction_open] if @__transaction_checkpoint__.nil?
     Transaction::Simple.debug_io << "#{'|' * @__transaction_level__} " << "Transaction Name: #{@__transaction_names__[-1].inspect}\n" if Transaction::Simple.debugging?
@@ -335,10 +316,10 @@ module Transaction::Simple
     end
   end
 
-  # Starts a transaction. Stores the current object state. If a
-  # transaction name is specified, the transaction will be named.
-  # Transaction names must be unique. Transaction names of +nil+ will be
-  # treated as unnamed transactions.
+  # Starts a transaction. Stores the current object state. If a transaction
+  # name is specified, the transaction will be named. Transaction names must
+  # be unique. Transaction names of +nil+ will be treated as unnamed
+  # transactions.
   def start_transaction(name = nil)
     @__transaction_level__ ||= 0
     @__transaction_names__ ||= []
@@ -360,9 +341,61 @@ module Transaction::Simple
     @__transaction_checkpoint__ = Marshal.dump(self)
   end
 
-  # Rewinds the transaction. If +name+ is specified, then the
-  # intervening transactions will be aborted and the named transaction
-  # will be rewound. Otherwise, only the current transaction is rewound.
+  # Rewinds the transaction. If +name+ is specified, then the intervening
+  # transactions will be aborted and the named transaction will be rewound.
+  # Otherwise, only the current transaction is rewound.
+  #
+  # After each level of transaction is rewound, if the callback method
+  # #_post_transaction_rewind is defined, it will be called. It is intended
+  # to allow a complex self-referential graph to fix itself. The simplest
+  # way to explain this is with an example.
+  #
+  #   class Child
+  #     attr_accessor :parent
+  #   end
+  #
+  #   class Parent
+  #     include Transaction::Simple
+  #
+  #     attr_reader :children
+  #     def initialize
+  #       @children = []
+  #     end
+  #
+  #     def << child
+  #       child.parent = self
+  #       @children << child
+  #     end
+  #
+  #     def valid?
+  #       @children.all? { |child| child.parent == self }
+  #     end
+  #   end
+  #
+  #   parent = Parent.new
+  #   parent << Child.new
+  #   parent.start_transaction
+  #   parent << Child.new
+  #   parent.abort_transaction
+  #   puts parent.valid? # => false
+  #
+  # This problem can be fixed by modifying the Parent class to include the
+  # #_post_transaction_rewind callback.
+  #
+  #   class Parent
+  #     # Reconnect the restored children to me, instead of to the bogus me
+  #     # that was restored to them by Marshal::load.
+  #     def _post_transaction_rewind
+  #       @children.each { |child| child.parent = self }
+  #     end
+  #   end
+  #
+  #   parent = Parent.new
+  #   parent << Child.new
+  #   parent.start_transaction
+  #   parent << Child.new
+  #   parent.abort_transaction
+  #   puts parent.valid? # => true
   def rewind_transaction(name = nil)
     raise Transaction::TransactionError, Transaction::Messages[:cannot_rewind_no_transaction] if @__transaction_checkpoint__.nil?
 
@@ -392,11 +425,13 @@ module Transaction::Simple
     self
   end
 
-  # Aborts the transaction. Resets the object state to what it was
-  # before the transaction was started and closes the transaction. If
-  # +name+ is specified, then the intervening transactions and the named
-  # transaction will be aborted. Otherwise, only the current transaction
-  # is aborted.
+  # Aborts the transaction. Rewinds the object state to what it was before
+  # the transaction was started and closes the transaction. If +name+ is
+  # specified, then the intervening transactions and the named transaction
+  # will be aborted. Otherwise, only the current transaction is aborted.
+  #
+  # See #rewind_transaction for information about dealing with complex
+  # self-referential object graphs.
   #
   # If the current or named transaction has been started by a block
   # (Transaction::Simple.start), then the execution of the block will be
@@ -404,9 +439,9 @@ module Transaction::Simple
   def abort_transaction(name = nil)
     raise Transaction::TransactionError, Transaction::Messages[:cannot_abort_no_transaction] if @__transaction_checkpoint__.nil?
 
-    # Check to see if we are trying to abort a transaction that is
-    # outside of the current transaction block. Otherwise, raise
-    # TransactionAborted if they are the same.
+    # Check to see if we are trying to abort a transaction that is outside
+    # of the current transaction block. Otherwise, raise TransactionAborted
+    # if they are the same.
     if @__transaction_block__ and name
       nix = @__transaction_names__.index(name) + 1
       raise Transaction::TransactionError, Transaction::Messages[:cannot_abort_transaction_before_block] if nix < @__transaction_block__
@@ -426,18 +461,18 @@ module Transaction::Simple
     self
   end
 
-  # If +name+ is +nil+ (default), the current transaction level is
-  # closed out and the changes are committed.
+  # If +name+ is +nil+ (default), the current transaction level is closed
+  # out and the changes are committed.
   #
-  # If +name+ is specified and +name+ is in the list of named
-  # transactions, then all transactions are closed and committed until
-  # the named transaction is reached.
+  # If +name+ is specified and +name+ is in the list of named transactions,
+  # then all transactions are closed and committed until the named
+  # transaction is reached.
   def commit_transaction(name = nil)
     raise Transaction::TransactionError, Transaction::Messages[:cannot_commit_no_transaction] if @__transaction_checkpoint__.nil?
     @__transaction_block__ ||= nil
 
-    # Check to see if we are trying to commit a transaction that is
-    # outside of the current transaction block. Otherwise, raise
+    # Check to see if we are trying to commit a transaction that is outside
+    # of the current transaction block. Otherwise, raise
     # TransactionCommitted if they are the same.
     if @__transaction_block__ and name
       nix = @__transaction_names__.index(name) + 1
@@ -467,8 +502,8 @@ module Transaction::Simple
     self
   end
 
-  # Alternative method for calling the transaction methods. An optional
-  # name can be specified for named transaction support.
+  # Alternative method for calling the transaction methods. An optional name
+  # can be specified for named transaction support.
   #
   # #transaction(:start)::  #start_transaction
   # #transaction(:rewind):: #rewind_transaction
@@ -493,9 +528,9 @@ module Transaction::Simple
     end
   end
 
-  # Allows specific variables to be excluded from transaction support.
-  # Must be done after extending the object but before starting the
-  # first transaction on the object.
+  # Allows specific variables to be excluded from transaction support. Must
+  # be done after extending the object but before starting the first
+  # transaction on the object.
   #
   #   vv.transaction_exclusions << "@io"
   def transaction_exclusions

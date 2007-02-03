@@ -1,5 +1,17 @@
 #! /usr/bin/env rake
-# -*- ruby -*-
+#--
+# Transaction::Simple
+# Simple object transaction support for Ruby
+# http://rubyforge.org/projects/trans-simple/
+#   Version 1.4.0
+#
+# Licensed under a MIT-style licence. See Licence.txt in the main
+# distribution for full licensing information.
+#
+# Copyright (c) 2003 - 2007 Austin Ziegler
+#
+# $Id$
+#++
 
 require 'rubygems'
 require 'hoe'
@@ -10,13 +22,15 @@ require 'transaction/simple'
 require 'archive/tar/minitar'
 require 'zlib'
 
-TSVER   = Transaction::Simple::TRANSACTION_SIMPLE_VERSION
-DISTDIR = "transaction-simple-#{Transaction::Simple::TRANSACTION_SIMPLE_VERSION}"
-TARDIST = "../#{DISTDIR}.tar.gz"
+TSVER     = Transaction::Simple::TRANSACTION_SIMPLE_VERSION
+DISTDIR   = "transaction-simple-#{TSVER}"
+TARFILE   = "pkg/#{DISTDIR}.tar.gz"
+MANIFEST  = File.read("Manifest.txt").split
+
+# TODO Make a "build_manifest" option to generate Manifest.txt
 
 Hoe.new "transaction-simple", TSVER do |p|
   p.rubyforge_name  = "trans-simple"
-# p.test_globs      = %w(tests/**/tc_*.rb)
   # This is a lie becasue I will continue to use Archive::Tar::Minitar.
   p.need_tar        = false
   # need_zip - Should package create a zipfile? [default: false]
@@ -28,7 +42,9 @@ Hoe.new "transaction-simple", TSVER do |p|
   p.changes         = p.paragraphs_of("History.txt", 0..1)
   p.description     = p.paragraphs_of("Readme.txt", 0..2)
 
-# p.rdoc_pattern    = %r{^(lib|bin)|Changelog|Install|LICENCE|Readme}
+  p.spec_extras[:required_ruby_version] = ">=1.8.2"
+  p.spec_extras[:extra_rdoc_files] = MANIFEST.grep(/txt$/) -
+    ["Manifest.txt"]
 
   # extra_deps - An array of rubygem dependencies.
   # clean_globs - An array of file patterns to delete on clean.
@@ -42,67 +58,44 @@ Hoe.new "transaction-simple", TSVER do |p|
   # test_files
 end
 
-spec = eval(File.read("transaction-simple.gemspec"))
-spec.version = Transaction::Simple::TRANSACTION_SIMPLE_VERSION
-desc "Build the RubyGem for Transaction::Simple"
-task :gem => [ :test ]
-Rake::GemPackageTask.new(spec) do |g|
-  g.need_tar    = false
-  g.need_zip    = false
-  g.package_dir = ".."
-end
-
 desc "Build a Transaction::Simple .tar.gz distribution."
-task :tar => [ TARDIST ]
-file TARDIST => [ :test ] do |t|
-  current = File.basename(Dir.pwd)
-  Dir.chdir("..") do
-    begin
-      files = Dir["#{current}/**/*"].select { |dd| dd !~ %r{(?:/CVS/?|~$)} }
-      files.map! do |dd|
-        ddnew = dd.gsub(/^#{current}/, DISTDIR)
-        mtime = File.stat(dd).mtime
-        if File.directory?(dd)
-          { :name => ddnew, :mode => 0755, :dir => true, :mtime => mtime }
-        else
-          if dd =~ %r{bin/}
-            mode = 0755
-          else
-            mode = 0644
-          end
-          data = File.read(dd)
-          { :name => ddnew, :mode => mode, :data => data, :size => data.size,
-            :mtime => mtime }
-        end
-      end
+task :tar => [ TARFILE ]
+file TARFILE => [ :test ] do |t|
+  files = MANIFEST.map { |f|
+    fn = File.join(DISTDIR, f)
+    tm = File.stat(f).mtime
 
-      ff = File.open(t.name.gsub(%r{^\.\./}o, ''), "wb")
-      gz = Zlib::GzipWriter.new(ff)
-      tw = Archive::Tar::Minitar::Writer.new(gz)
-
-      files.each do |entry|
-        if entry[:dir]
-          tw.mkdir(entry[:name], entry)
-        else
-          tw.add_file_simple(entry[:name], entry) { |os| os.write(entry[:data]) }
-        end
-      end
-    ensure
-      tw.close if tw
-      gz.close if gz
+    if File.directory?(f)
+      { :name => fn, :mode => 0755, :dir => true, :mtime => tm }
+    else
+      mode = if f =~ %r{^bin}
+               0755
+             else
+               0644
+             end
+      data = File.read(f)
+      { :name => fn, :mode => mode, :data => data, :size => data.size,
+        :mtime => tm }
     end
+  }
+
+  begin
+    tf = File.open(t.name, 'wb')
+    gz = Zlib::GzipWriter.new(tf)
+    tw = Archive::Tar:Minitar::Writer.new(gz)
+
+    files.each do |entry|
+      if entry[:dir]
+        tw.mkdir(entry[:name], entry)
+      else
+        tw.add_file_simple(entry[:name], entry) { |os|
+          os.write(entry[:data])
+        }
+      end
+    end
+  ensure
+    tw.close if tw
+    gz.close if gz
   end
 end
-task TARDIST => [ :test ]
-
-desc "Build the rdoc documentation for Transaction::Simple"
-task :docs do
-  require 'rdoc/rdoc'
-  rdoc_options = %w(--title Transaction::Simple --main Readme --line-numbers)
-  files = FileList[*%w(Readme Changelog bin/**/*.rb lib/**/*.rb)]
-  rdoc_options += files.to_a
-  RDoc::RDoc.new.document(rdoc_options)
-end
-
-desc "Build everything."
-task :default => [ :tar, :gem ]
+task :package => [ TARFILE ]
