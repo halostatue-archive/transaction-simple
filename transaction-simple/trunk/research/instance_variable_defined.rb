@@ -1,3 +1,4 @@
+# Provided by Nobu Nakada.
 You can use this code for previous versions.
 
  unless defined?(instance_variable_defined?)
