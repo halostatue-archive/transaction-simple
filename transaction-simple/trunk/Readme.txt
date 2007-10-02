@@ -28,8 +28,11 @@ Version 1.4.0 of Transaction::Simple adds a new post-rewind hook so that
 complex graph objects of the type in tests/tc_broken_graph.rb can correct
 themselves.
 
+Version 1.4.0.1 just fixes a simple bug with #transaction method handling
+during the deprecation warning.
+
 Copyright:: Copyright (c) 2003 - 2007 by Austin Ziegler
-Version::   1.4.0
+Version::   1.4.0.1
 Homepage::  http://rubyforge.org/projects/trans-simple/
 Licence::   MIT-Style; see Licence.txt
 

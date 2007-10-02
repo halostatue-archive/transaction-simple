@@ -5,7 +5,7 @@
 # Transaction::Simple
 # Simple object transaction support for Ruby
 # http://rubyforge.org/projects/trans-simple/
-#   Version 1.4.0
+#   Version 1.4.0.1
 #
 # Licensed under a MIT-style licence. See Licence.txt in the main
 # distribution for full licensing information.
@@ -44,13 +44,21 @@ module Transaction
     :cannot_commit_named_transaction => te % "cannot commit nonexistant transaction %s.",
     :cannot_start_empty_block_transaction => te % "cannot start a block transaction with no objects.",
     :cannot_obtain_transaction_lock => te % "cannot obtain transaction lock for #%s.",
+    :transaction => "Transaction",
+    :opened => "open",
+    :closed => "closed",
+    :transaction_name => "Transaction Name",
+    :start_transaction => "Start Transaction",
+    :rewind_transaction => "Rewind Transaction",
+    :commit_transaction => "Commit Transaction",
+    :abort_transaction => "Abort Transaction",
   }
 end
 
 # = Transaction::Simple for Ruby
 # Simple object transaction support for Ruby
 module Transaction::Simple
-  TRANSACTION_SIMPLE_VERSION = '1.4.0'
+  TRANSACTION_SIMPLE_VERSION = '1.4.0.1'
 
   class << self
     # Sets the Transaction::Simple debug object. It must respond to #<<.
@@ -66,6 +74,10 @@ module Transaction::Simple
       end
     end
 
+    # Set to +true+ if you want the checkpoint printed with debugging
+    # messages where it matters.
+    attr_accessor :debug_with_checkpoint
+
     # Returns +true+ if we are debugging.
     def debugging?
       defined? @debugging and @debugging
@@ -76,6 +88,34 @@ module Transaction::Simple
       @tdi ||= ""
       @tdi
     end
+
+    # Fast debugging.
+    def debug(format, *args)
+      return unless debugging?
+      debug_io << (format % args)
+    end
+  end
+
+  def ___tmessage
+    Transaction::Messages
+  end
+  private :___tmessage
+
+  def ___tdebug(char, format, *args)
+    return unless Transaction::Simple.debugging?
+    if @__transaction_level__ > 0
+      Transaction::Simple.debug "#{char * @__transaction_level__} #{format}", args
+    else
+      Transaction::Simple.debug "#{format}", args
+    end
+  end
+  private :___tdebug
+
+  def ___tdebug_checkpoint
+    return unless Transaction::Simple.debugging?
+    return unless Transaction::Simple.debug_with_checkpoint
+
+    ___tdebug '|', '%s', @__transaction_checkpoint__.inspect
   end
 
   # If +name+ is +nil+ (default), then returns +true+ if there is currently
@@ -83,24 +123,35 @@ module Transaction::Simple
   # is currently a transaction known as +name+ open.
   def transaction_open?(name = nil)
     defined? @__transaction_checkpoint__ or @__transaction_checkpoint__ = nil
+
+    has_t = nil
+
     if name.nil?
-      Transaction::Simple.debug_io << "Transaction " << "[#{(@__transaction_checkpoint__.nil?) ? 'closed' : 'open'}]\n" if Transaction::Simple.debugging?
-      return (not @__transaction_checkpoint__.nil?)
+      has_t = (not @__transaction_checkpoint__.nil?)
     else
-      Transaction::Simple.debug_io << "Transaction(#{name.inspect}) " << "[#{(@__transaction_checkpoint__.nil?) ? 'closed' : 'open'}]\n" if Transaction::Simple.debugging?
-      return ((not @__transaction_checkpoint__.nil?) and @__transaction_names__.include?(name))
+      has_t = ((not @__transaction_checkpoint__.nil?) and
+               @__transaction_names__.include?(name))
     end
+
+    ___tdebug '>', "%s [%s]", ___tmessage[:transaction], ___tmessage[has_t ?
+      :opened : :closed]
+
+    has_t
   end
 
   # Returns the current name of the transaction. Transactions not explicitly
   # named are named +nil+.
   def transaction_name
-    raise Transaction::TransactionError, Transaction::Messages[:no_transaction_open] if @__transaction_checkpoint__.nil?
-    Transaction::Simple.debug_io << "#{'|' * @__transaction_level__} " << "Transaction Name: #{@__transaction_names__[-1].inspect}\n" if Transaction::Simple.debugging?
-    if @__transaction_names__[-1].kind_of?(String)
-      @__transaction_names__[-1].dup
+    raise Transaction::TransactionError, ___tmessage[:no_transaction_open] if @__transaction_checkpoint__.nil?
+
+    name = @__transaction_names__.last
+
+    ___tdebug '|', "%s(%s)", ___tmessage[:transaction_name], name.inspect
+
+    if name.kind_of?(String)
+      name.dup
     else
-      @__transaction_names__[-1]
+      name
     end
   end
 
@@ -114,17 +165,15 @@ module Transaction::Simple
 
     name = name.dup.freeze if name.kind_of?(String)
 
-    raise Transaction::TransactionError, Transaction::Messages[:unique_names] if name and @__transaction_names__.include?(name)
+    raise Transaction::TransactionError, ___tmessage[:unique_names] if name and @__transaction_names__.include?(name)
 
     @__transaction_names__ << name
     @__transaction_level__ += 1
 
-    if Transaction::Simple.debugging?
-      ss = "(#{name.inspect})"
-      ss = "" unless ss
+    ___tdebug '>', "%s(%s)", ___tmessage[:start_transaction], name.inspect
+    ___tdebug_checkpoint
 
-      Transaction::Simple.debug_io << "#{'>' * @__transaction_level__} " << "Start Transaction#{ss}\n"
-    end
+    checkpoint = Marshal.dump(self)
 
     @__transaction_checkpoint__ = Marshal.dump(self)
   end
@@ -185,28 +234,27 @@ module Transaction::Simple
   #   parent.abort_transaction
   #   puts parent.valid? # => true
   def rewind_transaction(name = nil)
-    raise Transaction::TransactionError, Transaction::Messages[:cannot_rewind_no_transaction] if @__transaction_checkpoint__.nil?
+    raise Transaction::TransactionError, ___tmessage[:cannot_rewind_no_transaction] if @__transaction_checkpoint__.nil?
 
     # Check to see if we are trying to rewind a transaction that is
     # outside of the current transaction block.
     defined? @__transaction_block__ or @__transaction_block__ = nil
     if @__transaction_block__ and name
       nix = @__transaction_names__.index(name) + 1
-      raise Transaction::TransactionError, Transaction::Messages[:cannot_rewind_transaction_before_block] if nix < @__transaction_block__
+      raise Transaction::TransactionError, ___tmessage[:cannot_rewind_transaction_before_block] if nix < @__transaction_block__
     end
 
     if name.nil?
       checkpoint = @__transaction_checkpoint__
       __rewind_this_transaction
       @__transaction_checkpoint__ = checkpoint
-      ss = "" if Transaction::Simple.debugging?
     else
-      raise Transaction::TransactionError, Transaction::Messages[:cannot_rewind_named_transaction] % name.inspect unless @__transaction_names__.include?(name)
-      ss = "(#{name})" if Transaction::Simple.debugging?
+      raise Transaction::TransactionError, ___tmessage[:cannot_rewind_named_transaction] % name.inspect unless @__transaction_names__.include?(name)
 
-      while @__transaction_names__[-1] != name
+      while @__transaction_names__.last != name
+        ___tdebug_checkpoint
         @__transaction_checkpoint__ = __rewind_this_transaction
-        Transaction::Simple.debug_io << "#{'|' * @__transaction_level__} " << "Rewind Transaction#{ss}\n" if Transaction::Simple.debugging?
+        ___tdebug '<', ___tmessage[:rewind_transaction], name
         @__transaction_level__ -= 1
         @__transaction_names__.pop
       end
@@ -214,7 +262,10 @@ module Transaction::Simple
       __rewind_this_transaction
       @__transaction_checkpoint__ = checkpoint
     end
-    Transaction::Simple.debug_io << "#{'|' * @__transaction_level__} " << "Rewind Transaction#{ss}\n" if Transaction::Simple.debugging?
+
+    ___tdebug '|', "%s(%s)", ___tmessage[:rewind_transaction], name.inspect
+    ___tdebug_checkpoint
+
     self
   end
 
@@ -230,7 +281,7 @@ module Transaction::Simple
   # (Transaction::Simple.start), then the execution of the block will be
   # halted with +break+ +self+.
   def abort_transaction(name = nil)
-    raise Transaction::TransactionError, Transaction::Messages[:cannot_abort_no_transaction] if @__transaction_checkpoint__.nil?
+    raise Transaction::TransactionError, ___tmessage[:cannot_abort_no_transaction] if @__transaction_checkpoint__.nil?
 
     # Check to see if we are trying to abort a transaction that is outside
     # of the current transaction block. Otherwise, raise TransactionAborted
@@ -238,7 +289,7 @@ module Transaction::Simple
     defined? @__transaction_block__ or @__transaction_block__ = nil
     if @__transaction_block__ and name
       nix = @__transaction_names__.index(name) + 1
-      raise Transaction::TransactionError, Transaction::Messages[:cannot_abort_transaction_before_block] if nix < @__transaction_block__
+      raise Transaction::TransactionError, ___tmessage[:cannot_abort_transaction_before_block] if nix < @__transaction_block__
 
       raise Transaction::TransactionAborted if @__transaction_block__ == nix
     end
@@ -248,7 +299,7 @@ module Transaction::Simple
     if name.nil?
       __abort_transaction(name)
     else
-      raise Transaction::TransactionError, Transaction::Messages[:cannot_abort_named_transaction] % name.inspect unless @__transaction_names__.include?(name)
+      raise Transaction::TransactionError, ___tmessage[:cannot_abort_named_transaction] % name.inspect unless @__transaction_names__.include?(name)
       __abort_transaction(name) while @__transaction_names__.include?(name)
     end
 
@@ -262,7 +313,7 @@ module Transaction::Simple
   # then all transactions are closed and committed until the named
   # transaction is reached.
   def commit_transaction(name = nil)
-    raise Transaction::TransactionError, Transaction::Messages[:cannot_commit_no_transaction] if @__transaction_checkpoint__.nil?
+    raise Transaction::TransactionError, ___tmessage[:cannot_commit_no_transaction] if @__transaction_checkpoint__.nil?
     @__transaction_block__ ||= nil
 
     # Check to see if we are trying to commit a transaction that is outside
@@ -270,7 +321,7 @@ module Transaction::Simple
     # TransactionCommitted if they are the same.
     if @__transaction_block__ and name
       nix = @__transaction_names__.index(name) + 1
-      raise Transaction::TransactionError, Transaction::Messages[:cannot_commit_transaction_before_block] if nix < @__transaction_block__
+      raise Transaction::TransactionError, ___tmessage[:cannot_commit_transaction_before_block] if nix < @__transaction_block__
 
       raise Transaction::TransactionCommitted if @__transaction_block__ == nix
     end
@@ -278,20 +329,22 @@ module Transaction::Simple
     raise Transaction::TransactionCommitted if @__transaction_block__ == @__transaction_level__
 
     if name.nil?
-      ss = "" if Transaction::Simple.debugging?
+      ___tdebug "<", "%s(%s)", ___tmessage[:commit_transaction], name.inspect
       __commit_transaction
-      Transaction::Simple.debug_io << "#{'<' * @__transaction_level__} " << "Commit Transaction#{ss}\n" if Transaction::Simple.debugging?
     else
-      raise Transaction::TransactionError, Transaction::Messages[:cannot_commit_named_transaction] % name.inspect unless @__transaction_names__.include?(name)
-      ss = "(#{name})" if Transaction::Simple.debugging?
+      raise Transaction::TransactionError, ___tmessage[:cannot_commit_named_transaction] % name.inspect unless @__transaction_names__.include?(name)
 
-      while @__transaction_names__[-1] != name
-        Transaction::Simple.debug_io << "#{'<' * @__transaction_level__} " << "Commit Transaction#{ss}\n" if Transaction::Simple.debugging?
+      while @__transaction_names__.last != name
+        ___tdebug "<", "%s(%s)", ___tmessage[:commit_transaction], name.inspect
         __commit_transaction
+        ___tdebug_checkpoint
       end
-      Transaction::Simple.debug_io << "#{'<' * @__transaction_level__} " << "Commit Transaction#{ss}\n" if Transaction::Simple.debugging?
+
+      ___tdebug "<", "%s(%s)", ___tmessage[:commit_transaction], name.inspect
       __commit_transaction
     end
+
+    ___tdebug_checkpoint
 
     self
   end
@@ -317,19 +370,19 @@ module Transaction::Simple
               else nil
               end
 
-    if method
-      warn "The #transaction method has been deprecated. Use #{method} instead."
+    if _method
+      warn "The #transaction method has been deprecated. Use #{_method} instead."
     else
       warn "The #transaction method has been deprecated."
     end
 
-    case method
+    case _method
     when :transaction_name
-      __send__ method
+      __send__ _method
     when nil
       nil
     else
-      __send__ method, name
+      __send__ _method, name
     end
   end
 
@@ -344,7 +397,7 @@ module Transaction::Simple
 
   class << self
     def __common_start(name, vars, &block)
-      raise Transaction::TransactionError, Transaction::Messages[:cannot_start_empty_block_transaction] if vars.empty?
+      raise Transaction::TransactionError, ___tmessage[:cannot_start_empty_block_transaction] if vars.empty?
 
       if block
         begin
@@ -414,18 +467,12 @@ module Transaction::Simple
   def __abort_transaction(name = nil) #:nodoc:
     @__transaction_checkpoint__ = __rewind_this_transaction
 
-    if Transaction::Simple.debugging?
-      if name.nil?
-        ss = ""
-      else
-        ss = "(#{name.inspect})"
-      end
-
-      Transaction::Simple.debug_io << "#{'<' * @__transaction_level__} " << "Abort Transaction#{ss}\n"
-    end
+    ___tdebug '<', "%s(%s)", ___tmessage[:abort_transaction], name.inspect
+    ___tdebug_checkpoint
 
     @__transaction_level__ -= 1
     @__transaction_names__.pop
+
     if @__transaction_level__ < 1
       @__transaction_level__ = 0
       @__transaction_names__ = []
@@ -437,7 +484,7 @@ module Transaction::Simple
 
   def __rewind_this_transaction #:nodoc:
     defined? @__transaction_checkpoint__ or @__transaction_checkpoint__ = nil
-    raise Transaction::TransactionError, Transaction::Messages[:cannot_rewind_no_transaction] if @__transaction_checkpoint__.nil?
+    raise Transaction::TransactionError, ___tmessage[:cannot_rewind_no_transaction] if @__transaction_checkpoint__.nil?
     rr = Marshal.restore(@__transaction_checkpoint__)
 
     replace(rr) if respond_to?(:replace)
@@ -464,7 +511,7 @@ module Transaction::Simple
 
   def __commit_transaction #:nodoc:
     defined? @__transaction_checkpoint__ or @__transaction_checkpoint__ = nil
-    raise Transaction::TransactionError, Transaction::Messages[:cannot_commit_no_transaction] if @__transaction_checkpoint__.nil?
+    raise Transaction::TransactionError, ___tmessage[:cannot_commit_no_transaction] if @__transaction_checkpoint__.nil?
     old = Marshal.restore(@__transaction_checkpoint__)
     w, $-w = $-w, false # 20070203 OH is this very UGLY
     @__transaction_checkpoint__ = old.instance_variable_get(:@__transaction_checkpoint__)

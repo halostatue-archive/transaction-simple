@@ -3,7 +3,7 @@
 # Transaction::Simple
 # Simple object transaction support for Ruby
 # http://rubyforge.org/projects/trans-simple/
-#   Version 1.4.0
+#   Version 1.4.0.1
 #
 # Licensed under a MIT-style licence. See Licence.txt in the main
 # distribution for full licensing information.
@@ -42,6 +42,7 @@ Hoe.new "transaction-simple", TSVER do |p|
   p.spec_extras[:extra_rdoc_files] = MANIFEST.grep(/txt$/) -
     ["Manifest.txt"]
   p.clean_globs     << "./**/log"
+  p.extra_deps      << [ "archive-tar-minitar", "~>0.5.1" ]
 
   # extra_deps - An array of rubygem dependencies.
   # clean_globs - An array of file patterns to delete on clean.
