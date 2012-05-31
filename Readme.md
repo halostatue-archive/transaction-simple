@@ -1,4 +1,4 @@
-= Transaction::Simple for Ruby
+# Transaction::Simple for Ruby
 
 Transaction::Simple provides a generic way to add active transaction
 support to objects. The transaction methods added by this module will work
@@ -31,15 +31,16 @@ themselves.
 Version 1.4.0.1 just fixes a simple bug with #transaction method handling
 during the deprecation warning.
 
-Copyright:: Copyright (c) 2003 - 2007 by Austin Ziegler
-Version::   1.4.0.1
-Homepage::  http://rubyforge.org/projects/trans-simple/
-Licence::   MIT-Style; see Licence.txt
+Copyright:: Copyright (c) 2003 - 2012 by Austin Ziegler<br/>
+Homepage::  http://rubyforge.org/projects/trans-simple/<br/>
+Licence::   MIT-Style; see Licence.txt<br/>
 
 Thanks to David Black, Mauricio Fernandez, Patrick Hurley, Pit Capitain, and
 Matz for their assistance with this library.
 
-== Usage
+## Usage
+
+```Ruby
   include 'transaction/simple'
 
   v = "Hello, you."               # -> "Hello, you."
@@ -66,8 +67,11 @@ Matz for their assistance with this library.
   v.transaction_open?             # -> true
   v.abort_transaction             # -> "Hello, you."
   v.transaction_open?             # -> false
+```
 
-== Named Transaction Usage
+## Named Transaction Usage
+
+```Ruby
   v = "Hello, you."               # -> "Hello, you."
   v.extend(Transaction::Simple)   # -> "Hello, you."
 
@@ -98,8 +102,11 @@ Matz for their assistance with this library.
 
   v.commit_transaction(:first)    # -> "Hello, HAL."
   v.transaction_open?             # -> false
+```
 
-== Block Transaction Usage
+## Block Transaction Usage
+
+```Ruby
   v = "Hello, you."               # -> "Hello, you."
   Transaction::Simple.start(v) do |tv|
       # v has been extended with Transaction::Simple and an unnamed
@@ -132,8 +139,11 @@ Matz for their assistance with this library.
     tv.abort_transaction          # -> "Hello, you."
   end
   v.transaction_open?             # -> false
+```
 
-== Transaction Groups
+## Transaction Groups
+
+```Ruby
   require 'transaction/simple/group'
 
   x = "Hello, you."
@@ -166,34 +176,37 @@ Matz for their assistance with this library.
   g.abort_transaction(:first)     # -> [ x, y ]
   x                               = -> "Hello, you."
   y                               = -> "And you, too."
+```
 
-== Thread Safety
+## Thread Safety
+
 Threadsafe versions of Transaction::Simple and Transaction::Simple::Group
 exist; these are loaded from 'transaction/simple/threadsafe' and
 'transaction/simple/threadsafe/group', respectively, and are represented in
 Ruby code as Transaction::Simple::ThreadSafe and
 Transaction::Simple::ThreadSafe::Group, respectively.
 
-== Contraindications
+## Contraindications
+
 While Transaction::Simple is very useful, it has limitations that must be
 understood prior to using it. Transaction::Simple:
 
-* uses Marshal. Thus, any object which cannot be Marshal-ed cannot use
+ - uses Marshal. Thus, any object which cannot be Marshal-ed cannot use
   Transaction::Simple. In my experience, this affects singleton objects
   more often than any other object.
-* does not manage external resources. Resources external to the object and
+ - does not manage external resources. Resources external to the object and
   its instance variables are not managed at all. However, all instance
   variables and objects "belonging" to those instance variables are
   managed. If there are object reference counts to be handled,
   Transaction::Simple will probably cause problems.
-* is not thread-safe. In the ACID ("atomic, consistent, isolated,
+ - is not thread-safe. In the ACID ("atomic, consistent, isolated,
   durable") test, Transaction::Simple provides consistency and durability, but
   cannot itself provide isolation. Transactions should be considered "critical
   sections" in multi-threaded applications. Thread safety of the transaction
   acquisition and release process itself can be ensured with the thread-safe
   version, Transaction::Simple::ThreadSafe. With transaction groups, some
   level of atomicity is assured.
-* does not maintain Object#__id__ values on rewind or abort. This only affects
+ - does not maintain Object#__id__ values on rewind or abort. This only affects
   complex self-referential graphs. tests/tc_broken_graph.rb demonstrates this
   and its mitigation with the new post-rewind hook. #_post_transaction_rewind.
   Matz has implemented an experimental feature in Ruby 1.9 that may find its
@@ -201,7 +214,5 @@ understood prior to using it. Transaction::Simple:
   the need for #_post_transaction_rewind. Pit Capitain has also suggested a
   workaround that does not require changes to core Ruby, but does not work in
   all cases. A final resolution is still pending further discussion.
-* Can be a memory hog if you use many levels of transactions on many
+ - Can be a memory hog if you use many levels of transactions on many
   objects.
-
-$Id$
