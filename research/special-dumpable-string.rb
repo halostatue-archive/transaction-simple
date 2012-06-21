@@ -1,3 +1,5 @@
+# -*- ruby encoding: utf-8 -*-
+
 load 'special-dumpable.rb'
 
 class Child
@@ -36,3 +38,5 @@ puts "parent.object_id: #{parent.object_id}"
 puts "parent.children[0].parent.object_id: #{parent.children[0].parent.object_id}"
 parent << Child.new
 puts "parent.children[1].parent.object_id: #{parent.children[1].parent.object_id}"
+
+# vim: syntax=ruby

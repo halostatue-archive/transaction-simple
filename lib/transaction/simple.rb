@@ -1,19 +1,7 @@
-# :title: Transaction::Simple -- Active Object Transaction Support for Ruby
-# :main: Readme.txt
+# -*- ruby encoding: utf-8 -*-
 
-#--
-# Transaction::Simple
-# Simple object transaction support for Ruby
-# http://rubyforge.org/projects/trans-simple/
-#   Version 1.4.0.1
-#
-# Licensed under a MIT-style licence. See Licence.txt in the main
-# distribution for full licensing information.
-#
-# Copyright (c) 2003 - 2007 Austin Ziegler
-#
-# $Id$
-#++
+# :title: Transaction::Simple -- Active Object Transaction Support for Ruby
+# :main: Readme.rdoc
 
 # The "Transaction" namespace can be used for additional transaction support
 # objects and modules.
@@ -55,10 +43,8 @@ module Transaction
   }
 end
 
-# = Transaction::Simple for Ruby
-# Simple object transaction support for Ruby
 module Transaction::Simple
-  TRANSACTION_SIMPLE_VERSION = '1.4.0.1'
+  VERSION = TRANSACTION_SIMPLE_VERSION = '1.4.0.2'
 
   class << self
     # Sets the Transaction::Simple debug object. It must respond to #<<.
@@ -117,6 +103,7 @@ module Transaction::Simple
 
     ___tdebug '|', '%s', @__transaction_checkpoint__.inspect
   end
+  private :___tdebug_checkpoint
 
   # If +name+ is +nil+ (default), then returns +true+ if there is currently
   # a transaction open. If +name+ is specified, then returns +true+ if there
@@ -133,8 +120,7 @@ module Transaction::Simple
                @__transaction_names__.include?(name))
     end
 
-    ___tdebug '>', "%s [%s]", ___tmessage[:transaction], ___tmessage[has_t ?
-      :opened : :closed]
+    ___tdebug '>', "%s [%s]", ___tmessage[:transaction], ___tmessage[has_t ? :opened : :closed]
 
     has_t
   end
@@ -236,8 +222,8 @@ module Transaction::Simple
   def rewind_transaction(name = nil)
     raise Transaction::TransactionError, ___tmessage[:cannot_rewind_no_transaction] if @__transaction_checkpoint__.nil?
 
-    # Check to see if we are trying to rewind a transaction that is
-    # outside of the current transaction block.
+    # Check to see if we are trying to rewind a transaction that is outside
+    # of the current transaction block.
     defined? @__transaction_block__ or @__transaction_block__ = nil
     if @__transaction_block__ and name
       nix = @__transaction_names__.index(name) + 1
@@ -258,6 +244,7 @@ module Transaction::Simple
         @__transaction_level__ -= 1
         @__transaction_names__.pop
       end
+
       checkpoint = @__transaction_checkpoint__
       __rewind_this_transaction
       @__transaction_checkpoint__ = checkpoint
@@ -290,7 +277,6 @@ module Transaction::Simple
     if @__transaction_block__ and name
       nix = @__transaction_names__.index(name) + 1
       raise Transaction::TransactionError, ___tmessage[:cannot_abort_transaction_before_block] if nix < @__transaction_block__
-
       raise Transaction::TransactionAborted if @__transaction_block__ == nix
     end
 
@@ -479,6 +465,7 @@ module Transaction::Simple
       @__transaction_checkpoint__ = nil
     end
   end
+  private :__abort_transaction
 
   SKIP_TRANSACTION_VARS = %w(@__transaction_checkpoint__ @__transaction_level__)
 
@@ -508,6 +495,7 @@ module Transaction::Simple
     $-w = w # 20070203 OH is this very UGLY
     res
   end
+  private :__rewind_this_transaction
 
   def __commit_transaction #:nodoc:
     defined? @__transaction_checkpoint__ or @__transaction_checkpoint__ = nil
@@ -526,8 +514,7 @@ module Transaction::Simple
       @__transaction_checkpoint__ = nil
     end
   end
-
-  private :__abort_transaction
-  private :__rewind_this_transaction
   private :__commit_transaction
 end
+
+# vim: syntax=ruby

@@ -1,17 +1,5 @@
-#!/usr/bin/env ruby
-#--
-# Transaction::Simple
-# Simple object transaction support for Ruby
-# http://rubyforge.org/projects/trans-simple/
-#   Version 1.4.0
-#
-# Licensed under a MIT-style licence. See Licence.txt in the main
-# distribution for full licensing information.
-#
-# Copyright (c) 2003 - 2007 Austin Ziegler
-#
-# $Id: simple.rb,v 1.7 2005/06/12 19:48:17 austin Exp $
-#++
+# -*- ruby encoding: utf-8 -*-
+
 $LOAD_PATH.unshift("#{File.dirname(__FILE__)}/../lib") if __FILE__ == $0
 
 require 'transaction/simple'
@@ -68,3 +56,5 @@ module Transaction::Simple::Test
     end
   end
 end
+
+# vim: syntax=ruby

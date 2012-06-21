@@ -1,6 +1,7 @@
 #!/usr/bin/env ruby
+# -*- ruby encoding: utf-8 -*-
 #
-#  SpecialDumpable  -  workaround for a problem in Transaction::Simple
+#  SpecialDumpable - workaround for a problem in Transaction::Simple
 #
 #  (C) 2006 Pit Capitain
 #
@@ -12,11 +13,11 @@
 #
 #  The objects that are restored from Marshal shouldn't reference the newly
 #  created root object, but the original root object. After studying the
-#  source code of Marshal, I found that this could be achieved with a special
-#  _load method of the root object's class which returns the original root
-#  object. Then the original root object would be stored in the internal list
-#  of restored objects and references to the root object would use the original
-#  one.
+#  source code of Marshal, I found that this could be achieved with a
+#  special _load method of the root object's class which returns the
+#  original root object. Then the original root object would be stored in
+#  the internal list of restored objects and references to the root object
+#  would use the original one.
 #
 #  See SpecialDumpable::ClassMethods#_load
 #
@@ -25,14 +26,15 @@
 #
 #  See SpecialDumpable#_dump
 #
-#  Note: this means that classes with their own _load and _dump methods cannot
-#  be used with this implementation. I think it should be possible to enhance
-#  the implementation to support these classes, too.
+#  Note: this means that classes with their own _load and _dump methods
+#  cannot be used with this implementation. I think it should be possible to
+#  enhance the implementation to support these classes, too.
 #
-#  Using those two methods, the objects restored from Marshal really reference
-#  the original root object. But this is not enough. We have to restore the
-#  instance variables of the root object, too. The _dump method from above
-#  only dumps the object_id of the root object, not its instance variables.
+#  Using those two methods, the objects restored from Marshal really
+#  reference the original root object. But this is not enough. We have to
+#  restore the instance variables of the root object, too. The _dump method
+#  from above only dumps the object_id of the root object, not its instance
+#  variables.
 #
 #  For the instance variables, we create a new object and store the instance
 #  variables of the root object there. Then we not only serialize the root
@@ -53,9 +55,7 @@
 #
 #  That's it.
 
-
 module SpecialDumpable
-  
   def self.included base
     base.extend ClassMethods
   end
@@ -69,14 +69,14 @@ module SpecialDumpable
   def _dump limit
     object_id.to_s
   end
-  
+
   def special_dump
     value_holder = Object.new
     SpecialDumpable.copy_instance_variables self, value_holder
     Marshal.dump [ self, value_holder ]
   end
-  
-  def special_restore source  
+
+  def special_restore source
     self_that_can_be_ignored, value_holder = Marshal.restore source
     SpecialDumpable.copy_instance_variables value_holder, self
     self
@@ -88,7 +88,7 @@ module SpecialDumpable
       to.instance_variable_set var, val
     end
   end
-  
+
 end
 
 if __FILE__ == $0
@@ -126,3 +126,5 @@ if __FILE__ == $0
   parent << Child.new
   puts "parent.children[1].parent.object_id: #{parent.children[1].parent.object_id}"
 end
+
+# vim: syntax=ruby

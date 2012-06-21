@@ -1,16 +1,5 @@
-#--
-# Transaction::Simple
-# Simple object transaction support for Ruby
-# http://rubyforge.org/projects/trans-simple/
-#   Version 1.4.0
-#
-# Licensed under a MIT-style licence. See Licence.txt in the main
-# distribution for full licensing information.
-#
-# Copyright (c) 2003 - 2007 Austin Ziegler
-#
-# $Id$
-#++
+# -*- ruby encoding: utf-8 -*-
+
 require 'transaction/simple'
 require 'thread'
 
@@ -20,28 +9,27 @@ module Transaction
   class TransactionThreadError < TransactionError; end
 end
 
-  # = Transaction::Simple::ThreadSafe
-  # Thread-safe simple object transaction support for Ruby.
-  # Transaction::Simple::ThreadSafe is used in the same way as
-  # Transaction::Simple. Transaction::Simple::ThreadSafe uses a Mutex object
-  # to ensure atomicity at the cost of performance in threaded applications.
-  #
-  # Transaction::Simple::ThreadSafe will not wait to obtain a lock; if the
-  # lock cannot be obtained immediately, a
-  # Transaction::TransactionThreadError will be raised.
-  #
-  # Thanks to Mauricio Fernandez for help with getting this part working.
-  #
-  # Threadsafe transactions can be used in any place that normal
-  # transactions would. The main difference would be in setup:
-  #
-  #   require 'transaction/simple/threadsafe'
-  #
-  #   x = "Hello, you."
-  #   x.extend(Transaction::Simple::ThreadSafe) # Threadsafe
-  #
-  #   y = "Hello, you."
-  #   y.extend(Transaction::Simple)             # Not threadsafe
+# Thread-safe simple object transaction support for Ruby.
+# Transaction::Simple::ThreadSafe is used in the same way as
+# Transaction::Simple. Transaction::Simple::ThreadSafe uses a Mutex object
+# to ensure atomicity at the cost of performance in threaded applications.
+#
+# Transaction::Simple::ThreadSafe will not wait to obtain a lock; if the
+# lock cannot be obtained immediately, a Transaction::TransactionThreadError
+# will be raised.
+#
+# Thanks to Mauricio Fernandez for help with getting this part working.
+#
+# Threadsafe transactions can be used in any place that normal transactions
+# would. The main difference would be in setup:
+#
+#   require 'transaction/simple/threadsafe'
+#
+#   x = "Hello, you."
+#   x.extend(Transaction::Simple::ThreadSafe) # Threadsafe
+#
+#   y = "Hello, you."
+#   y.extend(Transaction::Simple)             # Not threadsafe
 module Transaction::Simple::ThreadSafe
   include Transaction::Simple
 
@@ -66,3 +54,5 @@ module Transaction::Simple::ThreadSafe
     EOS
   end
 end
+
+# vim: syntax=ruby
