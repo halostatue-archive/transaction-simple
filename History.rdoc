@@ -1,13 +1,13 @@
-== 1.4.0.2 / 2012-??-??
+== 1.4.0.2 / 2012-06-20
 * Bookkeeping release that fixes install in scenarios where the RubyGem
   indicated it had a runtime dependency on hoe. Thanks to Michael Grosser
   (https://github.com/grosser) for the inspiration.
 * Marked all files as UTF-8.
 
-== 1.4.0.1 / 2007.10.01
+== 1.4.0.1 / 2007-10-01
 * Fixed a simple bug with the #transaction method handling.
 
-== 1.4.0 / 2007.02.03
+== 1.4.0 / 2007-02-03
 
 * Adding a post-rewind hook (#_post_transaction_rewind) so that complex
   graph objects can correct themselves after rewinding. See the
@@ -62,15 +62,3 @@
 == Transaction::Simple 1.0
 
 * Created. Initial release.
-
-== Copyright
-  Transaction::Simple
-  Simple object transaction support for Ruby
-  http://rubyforge.org/projects/trans-simple/
-
-  Licensed under a MIT-style licence. See Licence.txt in the main
-  distribution for full licensing information.
-
-  Copyright (c) 2003 - 2007 Austin Ziegler
-
-  $Id$
