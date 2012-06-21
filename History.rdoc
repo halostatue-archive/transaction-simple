@@ -1,7 +1,12 @@
-== Transaction::Simple 1.4.0.1 / 2007.10.01
+== 1.4.0.2 / 2012-??-??
+* Bookkeeping release that fixes install in scenarios where the RubyGem
+  indicated it had a runtime dependency on hoe. Thanks to Michael Grosser
+  (https://github.com/grosser) for the inspiration.
+
+== 1.4.0.1 / 2007.10.01
 * Fixed a simple bug with the #transaction method handling.
 
-== Transaction::Simple 1.4.0 / 2007.02.03
+== 1.4.0 / 2007.02.03
 
 * Adding a post-rewind hook (#_post_transaction_rewind) so that complex
   graph objects can correct themselves after rewinding. See the
