@@ -13,7 +13,7 @@ Hoe.spec 'transaction-simple' do
 
   developer('Austin Ziegler', 'austin@rubyforge.org')
 
-  self.remote_rdoc_dir = '.'
+  self.remote_rdoc_dir = ''
   self.rsync_args << ' --exclude=statsvn/'
 
   self.history_file = 'History.rdoc'

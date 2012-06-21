@@ -1,7 +1,6 @@
 # -*- ruby encoding: utf-8 -*-
 
-# :title: Transaction::Simple -- Active Object Transaction Support for Ruby
-# :main: Readme.rdoc
+# :main: README.rdoc
 
 # The "Transaction" namespace can be used for additional transaction support
 # objects and modules.
