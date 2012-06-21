@@ -2,6 +2,7 @@
 * Bookkeeping release that fixes install in scenarios where the RubyGem
   indicated it had a runtime dependency on hoe. Thanks to Michael Grosser
   (https://github.com/grosser) for the inspiration.
+* Marked all files as UTF-8.
 
 == 1.4.0.1 / 2007.10.01
 * Fixed a simple bug with the #transaction method handling.

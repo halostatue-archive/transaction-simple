@@ -38,7 +38,12 @@ themselves.
 Version 1.4.0.1 just fixes a simple bug with #transaction method handling
 during the deprecation warning.
 
-Version 1.4.0.2 is a metadata update converting to modern Hoe conventions, etc.
+Version 1.4.0.2 is a small update for people who use Transaction::Simple in
+bundler (adding lib/transaction-simple.rb) and other scenarios where having Hoe
+as a runtime dependency (a bug fixed in Hoe several years ago, but not visible
+in Transaction::Simple because it has not needed a re-release). All of the
+files internally have also been marked as UTF-8, ensuring full Ruby 1.9
+compatibility.
 
 == Usage
 
