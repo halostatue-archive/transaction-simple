@@ -3,10 +3,10 @@
 $LOAD_PATH.unshift("#{File.dirname(__FILE__)}/../lib") if __FILE__ == $0
 
 require 'transaction/simple'
-require 'test/unit'
+require 'minitest'
 
 module Transaction::Simple::Test
-  class BrokenGraph < Test::Unit::TestCase #:nodoc:
+  class BrokenGraph < Minitest::Test #:nodoc:
     class Child
       attr_accessor :parent
     end
@@ -41,7 +41,7 @@ module Transaction::Simple::Test
       parent << Child.new
       assert_equal(parent.object_id, parent.children[1].parent.object_id)
       parent.abort_transaction
-      assert_not_equal(parent.object_id, parent.children[0].parent.object_id)
+      refute_equal(parent.object_id, parent.children[0].parent.object_id)
     end
 
     def test_fixed_graph
